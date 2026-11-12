@@ -1,0 +1,19 @@
+import type { QueryClientConfig } from '@tanstack/react-query'
+
+export const queryClientConfig: QueryClientConfig = {
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number }).status
+        if (status !== undefined && status >= 400 && status < 500) return false
+        return failureCount < 2
+      },
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+}

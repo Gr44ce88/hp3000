@@ -1,0 +1,73 @@
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { HookerCard } from '@/components/widgets/HookerCard'
+import { Spinner } from '@/components/ui/Spinner'
+import { fetchHookers } from '@/features/hookers/api'
+import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
+
+export default function FavoritesPage() {
+  const favoritesQuery = useFavoriteIds()
+  const ids = favoritesQuery.data ?? []
+  const toggleMutation = useToggleFavorite()
+  const toggle = (id: string) => toggleMutation.mutate({ id, favorite: true })
+
+  const favorites = useQuery({
+    queryKey: ['favorites', ids],
+    queryFn: ({ signal }) => fetchHookers({ ids, limit: 24 }, signal),
+    enabled: ids.length > 0,
+  })
+
+  return (
+    <div className="mx-auto max-w-5xl">
+      <h1 className="text-xl font-medium tracking-tight text-content">Избранное</h1>
+      <p className="mt-0.5 text-[11px] text-content-muted">{ids.length} сохранено</p>
+
+      {ids.length === 0 && (
+        <div className="mt-4 rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
+          <p className="text-sm font-medium text-content">Пусто</p>
+          <p className="mt-1 text-xs text-content-muted">Сохраняйте анкеты кнопкой ♡ в каталоге.</p>
+          <Link
+            to="/"
+            className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
+          >
+            В каталог
+          </Link>
+        </div>
+      )}
+
+      {favorites.isPending && ids.length > 0 && (
+        <div className="mt-4">
+          <Spinner label="Загружаем избранное" />
+        </div>
+      )}
+
+      {favorites.isSuccess && (
+        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          {favorites.data.items.map((item) => (
+            <li key={item.id} className="min-w-0">
+              <HookerCard
+                id={item.id}
+                name={item.name}
+                age={item.age}
+                city={item.city}
+                pricePerHour={item.pricePerHour}
+                height={item.height}
+                rating={item.rating}
+                reviewsCount={item.reviewsCount}
+                isFavorite
+                onToggleFavorite={toggle}
+                href={`/hookers/${item.id}`}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {favorites.isSuccess && ids.length > favorites.data.items.length && (
+        <p className="mt-3 text-[11px] text-content-muted">
+          Часть сохранённых анкет снята с публикации.
+        </p>
+      )}
+    </div>
+  )
+}

@@ -1,0 +1,293 @@
+import { Link, useParams } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/Button'
+import { Field, Textarea } from '@/components/ui/Textarea'
+import { Spinner } from '@/components/ui/Spinner'
+import { MapPlaceholder } from '@/components/widgets/MapPlaceholder'
+import { ReviewCard, Stars } from '@/components/widgets/ReviewCard'
+import { createReview, fetchHooker, fetchReviews, type ReviewSort } from '@/features/hookers/api'
+import { useSession } from '@/features/auth/store'
+import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
+import { useHistoryStore } from '@/stores/history'
+
+const money = new Intl.NumberFormat('ru-RU')
+
+export default function HookerDetailPage() {
+  const { id = '' } = useParams()
+  const { token, user } = useSession()
+  const favoritesQuery = useFavoriteIds()
+  const favorites = favoritesQuery.data ?? []
+  const toggleFavoriteMutation = useToggleFavorite()
+  const pushHistory = useHistoryStore((state) => state.push)
+  const [rating, setRating] = useState(5)
+  const [sort, setSort] = useState<ReviewSort>('new')
+  const [text, setText] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+
+  const hooker = useQuery({
+    queryKey: ['hooker', id],
+    queryFn: ({ signal }) => fetchHooker(id, signal),
+    enabled: Boolean(id),
+  })
+
+  const reviews = useQuery({
+    queryKey: ['reviews', id, sort],
+    queryFn: ({ signal }) => fetchReviews(id, sort, signal),
+    enabled: Boolean(id),
+  })
+
+  const addReview = useMutation({
+    mutationFn: () => createReview(id, { rating, text: text.trim() }),
+    onSuccess: () => {
+      setText('')
+      setError(null)
+      void queryClient.invalidateQueries({ queryKey: ['reviews', id] })
+      void queryClient.invalidateQueries({ queryKey: ['hooker', id] })
+      void queryClient.invalidateQueries({ queryKey: ['hookers'] })
+    },
+    onError: (cause) => setError((cause as Error).message || 'Не удалось отправить отзыв'),
+  })
+
+  const viewedId = hooker.data?.id
+  useEffect(() => {
+    if (viewedId) pushHistory(viewedId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewedId])
+
+  if (hooker.isPending) {
+    return (
+      <div className="mx-auto max-w-4xl py-10">
+        <Spinner label="Загружаем анкету" />
+      </div>
+    )
+  }
+
+  if (hooker.isError || !hooker.data) {
+    return (
+      <div className="mx-auto max-w-4xl py-10 text-center">
+        <p className="text-sm font-medium text-content">Анкета не найдена</p>
+        <p className="mt-1 text-xs text-content-muted">Возможно, её сняли с публикации.</p>
+        <Link
+          to="/"
+          className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
+        >
+          К каталогу
+        </Link>
+      </div>
+    )
+  }
+
+  const item = hooker.data
+  const hasReviewed = Boolean(user && reviews.data?.some((review) => review.authorId === user.id))
+  const favorite = favorites.includes(item.id)
+  const isOwner = Boolean(user && item.ownerId === user.id)
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <Link to="/" className="text-[11px] text-content-muted hover:text-content">
+        ← Каталог
+      </Link>
+
+      <div className="mt-3 grid gap-6 sm:grid-cols-[minmax(0,240px)_1fr]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-mat ring-1 ring-hairline">
+          {item.photos[0] ? (
+            <img src={item.photos[0]} alt={item.name} className="size-full object-cover" />
+          ) : (
+            <span className="grid size-full place-items-center text-5xl font-medium text-content-muted/60">
+              {item.name.slice(0, 1)}
+            </span>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-medium tracking-tight text-content">
+                {item.name}, {item.age}
+              </h1>
+              <p className="mt-0.5 text-xs text-content-muted">
+                {item.city}
+                {item.district && ` · ${item.district}`} · {item.height} см
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleFavoriteMutation.mutate({ id: item.id, favorite })}
+              aria-pressed={favorite}
+              className="grid size-8 shrink-0 place-items-center rounded-full bg-chip text-sm transition-colors hover:bg-content/10"
+              aria-label={favorite ? 'Убрать из избранного' : 'В избранное'}
+            >
+              {favorite ? '♥' : '♡'}
+            </button>
+          </div>
+
+          <div className="mt-2 flex items-center gap-3">
+            <Stars score={Math.round(item.rating)} />
+            <span className="text-[11px] text-content-muted">
+              {item.reviewsCount} {item.reviewsCount === 1 ? 'отзыв' : 'отзывов'}
+            </span>
+          </div>
+
+          <p className="mt-3 text-lg font-medium text-content tabular-nums">
+            {money.format(item.pricePerHour)} ₽
+            <span className="text-xs font-normal text-content-muted">/час</span>
+          </p>
+
+          {item.services.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {item.services.map((service) => (
+                <li key={service} className="rounded-full bg-chip px-2.5 py-1 text-[11px] text-content-muted">
+                  {service}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {item.about && <p className="mt-4 text-[13px] whitespace-pre-line text-content">{item.about}</p>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <a
+              href={`tel:${item.phone.replace(/[^+\d]/g, '')}`}
+              className="inline-flex h-8 items-center rounded-full bg-strong px-3 text-[13px] font-medium text-surface tabular-nums hover:opacity-90"
+            >
+              {item.phone}
+            </a>
+            {isOwner && (
+              <Link
+                to={`/hookers/${item.id}/edit`}
+                className="inline-flex h-8 items-center rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
+              >
+                Редактировать
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <h2 className="text-[11px] tracking-wide text-content-muted uppercase">Район</h2>
+        <MapPlaceholder address={`${item.city}${item.district ? `, ${item.district}` : ''}`} />
+      </div>
+
+      <section className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[11px] tracking-wide text-content-muted uppercase">
+            Отзывы ({reviews.data?.length ?? 0})
+          </h2>
+
+          <div role="group" aria-label="Сортировка отзывов" className="flex gap-1 rounded-full bg-chip p-1">
+            {(
+              [
+                ['new', 'Новые'],
+                ['old', 'Старые'],
+                ['worst', 'Худшие'],
+                ['best', 'Лучшие'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sort === value}
+                onClick={() => setSort(value)}
+                className={
+                  sort === value
+                    ? 'h-6 rounded-full bg-surface-elevated px-2.5 text-[11px] font-medium text-content ring-1 ring-hairline'
+                    : 'h-6 rounded-full px-2.5 text-[11px] text-content-muted hover:text-content'
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {token && !hasReviewed ? (
+          <form
+            className="mt-3 space-y-2 rounded-lg bg-surface-elevated p-4 ring-1 ring-hairline"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (text.trim().length < 10) {
+                setError('Текст: минимум 10 символов')
+                return
+              }
+              addReview.mutate()
+            }}
+          >
+            <Field label="Ваша оценка" htmlFor="rating" required>
+              <div className="flex gap-1" id="rating">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={rating === value}
+                    aria-label={`${value} из 5`}
+                    onClick={() => setRating(value)}
+                    className={value <= rating ? 'text-rating' : 'text-line'}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Текст отзыва" htmlFor="text" required error={error ?? undefined}>
+              <Textarea
+                id="text"
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                rows={3}
+                placeholder="Как прошла встреча, что важно знать другим"
+                invalid={Boolean(error)}
+              />
+            </Field>
+            <Button type="submit" size="sm" isLoading={addReview.isPending}>
+              Отправить отзыв
+            </Button>
+          </form>
+        ) : hasReviewed ? null : (
+          <p className="mt-3 rounded-lg bg-mat p-4 text-xs text-content-muted">
+            Отзыв может оставить только вошедший.{' '}
+            <Link to="/auth" className="text-content underline underline-offset-2">
+              Войти
+            </Link>
+          </p>
+        )}
+
+        <div className="mt-3 space-y-2">
+          {reviews.data
+            ?.filter((review) => review.authorId === user?.id)
+            .map((review) => (
+              <div key={review.id} className="relative">
+                <span className="absolute -top-1.5 left-3 z-10 rounded-full bg-strong px-2 py-0.5 text-[10px] font-medium text-surface">
+                  ваш отзыв
+                </span>
+                <ReviewCard
+                  author={review.author}
+                  rating={review.rating}
+                  text={review.text}
+                  createdAt={review.createdAt}
+                  className="ring-content/30"
+                />
+              </div>
+            ))}
+
+          {reviews.data
+            ?.filter((review) => review.authorId !== user?.id)
+            .map((review) => (
+              <ReviewCard
+                key={review.id}
+                author={review.author}
+                rating={review.rating}
+                text={review.text}
+                createdAt={review.createdAt}
+              />
+            ))}
+          {reviews.isSuccess && reviews.data.length === 0 && (
+            <p className="text-xs text-content-muted">Пока ни одного отзыва.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
