@@ -38,6 +38,12 @@ export type HookerListParams = {
   page?: number
   limit?: number
   ids?: string[]
+  /** только с фото */
+  hasPhoto?: boolean
+  /** только с отзывами */
+  reviewed?: boolean
+  /** только центральные районы */
+  center?: boolean
 }
 
 export type HookerListResponse = {

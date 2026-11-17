@@ -19,7 +19,12 @@ SPA-приложение на React. Каркас: Vite + TypeScript, роути
 
 ```bash
 npm run dev            # dev-сервер на :5173, /api проксируется на VITE_PROXY_TARGET
-npm run dev:api        # дев-мок на :8080 (in-memory, server/index.js)
+npm run dev:api        # API на :8080 (api/, tsx watch)
+npm run db:start       # локальный Postgres на :5433
+npm run db:migrate     # миграции
+npm run db:seed        # демо-аккаунт и анкеты
+npm run db:reset       # дроп схемы и миграции заново
+npm run api:smoke      # проверка контракта API
 npm run build          # tsc -b + vite build
 npm run preview        # локальный предпросмотр сборки
 npm run typecheck      # только типы
@@ -33,6 +38,8 @@ npm run test:coverage  # покрытие (v8, html в coverage/)
 ## Структура
 
 ```
+api/             сервер: Express + Postgres, миграции, сид
+scripts/         db.sh (кластер), api-smoke.sh (контракт)
 src/
   app/           роутер, layout
   components/    переиспользуемые UI-примитивы
@@ -54,20 +61,44 @@ src/
 
 ## Окружение
 
-Скопируй `.env.example` в `.env` и поправь значения: `VITE_API_URL` (пусто = относительные запросы через прокси), `VITE_PROXY_TARGET`, `VITE_ENABLE_MSW`.
+Скопируй `.env.example` в `.env` и поправь значения: `VITE_API_URL` (пусто = относительные запросы через прокси), `VITE_PROXY_TARGET`, `VITE_ENABLE_MSW`, `VITE_YANDEX_MAPS_KEY`.
+
+## Локальная БД
+
+Postgres 17 для разработки живёт **вне репозитория**: данные в `D:\hermes\pgdata`, бинари в `~/pgsql/bin`, порт 5433 (5432 занят системной службой). Строка подключения — `DATABASE_URL` в `.env`.
+
+```bash
+npm run db:start     # поднять кластер
+npm run db:stop      # погасить
+npm run db:psql      # psql в базу hookers
+```
+
+Две грабли, на которые уже наступали:
+
+- `pg_ctl start` на этой машине даёт падение бэкендов с `0xC0000142` при первом подключении, поэтому `scripts/db.sh` стартует `postgres` напрямую и с чистым `PATH` без `/usr/bin` от git-bash.
+- Пути в аргументах нативных `postgres.exe`/`psql.exe` должны быть вида `D:/hermes/pgdata`, а не `/d/hermes/pgdata`: MSYS-трансляция здесь выключена.
 
 ## Бэкенд
 
-Реальный API — Rust (`api/`): axum + sqlx + Postgres, миграции, argon2, отзывы с защитой от дубля на уровне БД, избранное связью многие-ко-многим. Запуск и контракт — в `api/README.md`. Nginx-конфиг для продакшена — `deploy/nginx.conf`.
+Реальный API — `api/`: Express 5 + Postgres 17 на TypeScript, argon2id, сессии в БД, zod-валидация, SQL-миграции. Запуск, переменные окружения и полный контракт — в `api/README.md`. Nginx-конфиг для продакшена — `deploy/nginx.conf`.
 
 ```bash
-cd api && cargo run     # :8080, нужен DATABASE_URL в api/.env
+npm run db:start && npm run db:migrate && npm run db:seed
+npm run dev:api      # :8080
 ```
 
-Фронт уже переведён на сервер: избранное читается/пишется через `/api/favorites`, история просмотров остаётся в `localStorage` (`hp3k-history`).
+Избранное читается/пишется через `/api/favorites`, история просмотров дублируется на сервер (`/api/me/history`) и в `localStorage` (`hp3k-history`).
+
+## Карты
+
+Тепловая карта (`/heatmap`) — Яндекс.Карты JS API 2.1: пятна рисуются по районам из `/api/stats/districts`, размер и цвет зависят от плотности, клик по пятну открывает каталог с фильтром по району.
+
+- Ключ — `VITE_YANDEX_MAPS_KEY` в `.env` ([кабинет разработчика](https://developer.tech.yandex.ru/services)). Пустое значение тоже работает, но с лимитами тарифа и без гарантий.
+- Координаты районов и городов — `src/features/hookers/coords.ts`. Новый район без координат ставится по центру города, так что карта не ломается.
+- Скрипт API грузится один раз на приложение (`src/components/widgets/YandexMap.tsx`), при ошибке загрузки показывается текст вместо карты.
 
 ## Что дальше
 
 - Загрузка аватара и фото анкеты (сейчас — плейсхолдеры).
 - Redis/очередь на письма, подтверждение e-mail.
-- Тепловая карта: реальные данные вместо заглушки.
+- Реальные координаты анкет вместо справочника районов.

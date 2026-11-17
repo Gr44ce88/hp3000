@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/react/shallow'
 import type { SessionUser } from '@/features/auth/api'
-import { TOKEN_STORAGE_KEY } from '@/lib/api/client'
+import { TOKEN_STORAGE_KEY } from '@/lib/api/token'
 
 type SessionState = {
   token: string | null
@@ -10,6 +10,8 @@ type SessionState = {
   demoOptOut: boolean
   setSession: (token: string, user: SessionUser) => void
   setUser: (user: SessionUser) => void
+  /** сессия кончилась сама (401): демо-вход не блокируем */
+  expire: () => void
   clear: () => void
 }
 
@@ -24,6 +26,10 @@ export const useSessionStore = create<SessionState>()(
         set({ token, user, demoOptOut: false })
       },
       setUser: (user) => set({ user }),
+      expire: () => {
+        localStorage.removeItem(TOKEN_STORAGE_KEY)
+        set({ token: null, user: null })
+      },
       clear: () => {
         localStorage.removeItem(TOKEN_STORAGE_KEY)
         set({ token: null, user: null, demoOptOut: true })

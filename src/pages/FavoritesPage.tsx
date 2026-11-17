@@ -4,25 +4,53 @@ import { HookerCard } from '@/components/widgets/HookerCard'
 import { Spinner } from '@/components/ui/Spinner'
 import { fetchHookers } from '@/features/hookers/api'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
+import { useSessionStore } from '@/features/auth/store'
 
 export default function FavoritesPage() {
+  const token = useSessionStore((state) => state.token)
   const favoritesQuery = useFavoriteIds()
   const ids = favoritesQuery.data ?? []
   const toggleMutation = useToggleFavorite()
   const toggle = (id: string) => toggleMutation.mutate({ id, favorite: true })
 
   const favorites = useQuery({
-    queryKey: ['favorites', ids],
+    queryKey: ['favorites', 'list', ids],
     queryFn: ({ signal }) => fetchHookers({ ids, limit: 24 }, signal),
     enabled: ids.length > 0,
   })
 
+  if (!token) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <h1 className="text-xl font-medium tracking-tight text-content">Избранное</h1>
+        <div className="mt-4 rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
+          <p className="text-sm font-medium text-content">Нужен вход</p>
+          <p className="mt-1 text-xs text-content-muted">
+            Избранное хранится в аккаунте — войдите, чтобы видеть сохранённое.
+          </p>
+          <Link
+            to="/auth"
+            className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
+          >
+            Войти
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-xl font-medium tracking-tight text-content">Избранное</h1>
-      <p className="mt-0.5 text-[11px] text-content-muted">{ids.length} сохранено</p>
+      <p className="mt-0.5 text-[11px] text-content-muted tabular-nums">
+        {favoritesQuery.isSuccess ? `${ids.length} сохранено` : 'Загружаем список'}
+      </p>
 
-      {ids.length === 0 && (
+      {favoritesQuery.isError && (
+        <p className="mt-3 text-xs text-content-muted">Не удалось загрузить избранное.</p>
+      )}
+
+      {favoritesQuery.isSuccess && ids.length === 0 && (
         <div className="mt-4 rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
           <p className="text-sm font-medium text-content">Пусто</p>
           <p className="mt-1 text-xs text-content-muted">Сохраняйте анкеты кнопкой ♡ в каталоге.</p>
@@ -41,6 +69,10 @@ export default function FavoritesPage() {
         </div>
       )}
 
+      {favorites.isError && (
+        <p className="mt-3 text-xs text-content-muted">Анкеты не загрузились. Обновите страницу.</p>
+      )}
+
       {favorites.isSuccess && (
         <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {favorites.data.items.map((item) => (
@@ -52,6 +84,7 @@ export default function FavoritesPage() {
                 city={item.city}
                 pricePerHour={item.pricePerHour}
                 height={item.height}
+                photoUrl={item.photos[0]}
                 rating={item.rating}
                 reviewsCount={item.reviewsCount}
                 isFavorite

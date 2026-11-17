@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Spinner } from '@/components/ui/Spinner'
 import { MapPlaceholder } from '@/components/widgets/MapPlaceholder'
+import { SimilarHookers } from '@/components/widgets/SimilarHookers'
 import { ReviewCard, Stars } from '@/components/widgets/ReviewCard'
 import { createReview, fetchHooker, fetchReviews, type ReviewSort } from '@/features/hookers/api'
 import { useSession } from '@/features/auth/store'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { useHistoryStore } from '@/stores/history'
+import { cn } from '@/lib/cn'
 
 const money = new Intl.NumberFormat('ru-RU')
 
@@ -24,6 +26,7 @@ export default function HookerDetailPage() {
   const [sort, setSort] = useState<ReviewSort>('new')
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const queryClient = useQueryClient()
 
   const hooker = useQuery({
@@ -54,6 +57,10 @@ export default function HookerDetailPage() {
   useEffect(() => {
     if (viewedId) pushHistory(viewedId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewedId])
+
+  useEffect(() => {
+    setCopied(false)
   }, [viewedId])
 
   if (hooker.isPending) {
@@ -154,6 +161,22 @@ export default function HookerDetailPage() {
             >
               {item.phone}
             </a>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(item.phone)
+                  .then(() => {
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  })
+                  .catch(() => setCopied(false))
+              }}
+              className="inline-flex h-8 items-center rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
+              aria-label="Скопировать телефон"
+            >
+              {copied ? 'скопировано' : 'копировать'}
+            </button>
             {isOwner && (
               <Link
                 to={`/hookers/${item.id}/edit`}
@@ -216,15 +239,16 @@ export default function HookerDetailPage() {
             }}
           >
             <Field label="Ваша оценка" htmlFor="rating" required>
-              <div className="flex gap-1" id="rating">
+              <div className="flex gap-1" id="rating" role="radiogroup" aria-label="Ваша оценка">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
                     key={value}
                     type="button"
-                    aria-pressed={rating === value}
+                    role="radio"
+                    aria-checked={rating === value}
                     aria-label={`${value} из 5`}
                     onClick={() => setRating(value)}
-                    className={value <= rating ? 'text-rating' : 'text-line'}
+                    className={cn('text-base leading-none', value <= rating ? 'text-rating' : 'text-line')}
                   >
                     ★
                   </button>
@@ -288,6 +312,8 @@ export default function HookerDetailPage() {
           )}
         </div>
       </section>
+
+      <SimilarHookers id={item.id} city={item.city} pricePerHour={item.pricePerHour} />
     </div>
   )
 }

@@ -1,10 +1,11 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Input } from '@/components/ui/Input'
+import { CITIES } from '@/features/hookers/cities'
 import type { ListingPayload } from '@/features/hookers/api'
 import {
   COMMISSION_CURRENCY,
@@ -34,7 +35,7 @@ export function HookerForm({
   requiresPayment = true,
   onSubmit,
 }: Props) {
-  const [saved, setSaved] = useState<ListingValues | null>(null)
+  const [, setSaved] = useState<ListingValues | null>(null)
 
   const {
     register,
@@ -50,21 +51,6 @@ export function HookerForm({
 
   const paymentMethod = useWatch({ control, name: 'paymentMethod' })
   const about = useWatch({ control, name: 'about' }) ?? ''
-
-
-  if (saved) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-content">Форма прошла валидацию, готово к отправке.</p>
-        <pre className="overflow-auto rounded-lg bg-mat p-3 text-[11px] text-content-muted">
-          {JSON.stringify(saved, null, 2)}
-        </pre>
-        <Button size="sm" onClick={() => setSaved(null)}>
-          Назад
-        </Button>
-      </div>
-    )
-  }
 
   return (
     <form
@@ -103,7 +89,12 @@ export function HookerForm({
             className="h-10 w-full rounded-md border border-line bg-surface-elevated px-2 text-base text-content sm:text-sm"
             {...register('city')}
           >
-            <option value="Москва">Москва</option>
+            <option value={CITIES[0]}>{CITIES[0]}</option>
+            {CITIES.slice(1).map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
           </select>
         </Field>
       </div>

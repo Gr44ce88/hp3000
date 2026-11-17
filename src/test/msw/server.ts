@@ -28,6 +28,11 @@ export const hookersFixture: Hooker[] = [
   make({ id: '2', name: 'Сделка на 3000', pricePerHour: 3000 }),
 ]
 
+/** Вторая страница выдачи — для проверки «Показать ещё». */
+export const extraFixture: Hooker[] = Array.from({ length: 12 }, (_, index) =>
+  make({ id: `page-${index + 1}`, name: `Анкета ${index + 1}`, pricePerHour: 4000 + index * 100 }),
+)
+
 export const reviewsFixture: Review[] = [
   {
     id: 'r1',
@@ -39,29 +44,66 @@ export const reviewsFixture: Review[] = [
   },
 ]
 
+/** Избранное живёт в модульной переменной: PUT/DELETE меняют то же, что читает GET. */
+let favoriteIds: string[] = []
+
+export function setFavoriteIds(ids: string[]) {
+  favoriteIds = [...ids]
+}
+
+export function resetFixtures() {
+  favoriteIds = []
+}
+
 export const handlers = [
   http.get('*/api/hookers', ({ request }) => {
     const url = new URL(request.url)
     const ids = url.searchParams.get('ids')
-    const items = ids ? hookersFixture.filter((item) => ids.split(',').includes(item.id)) : hookersFixture
+    const hasPhoto = url.searchParams.get('hasPhoto')
+    const page = Number(url.searchParams.get('page') ?? 1)
+    const limit = Number(url.searchParams.get('limit') ?? 12)
+
+    let items = [...hookersFixture, ...extraFixture]
+    if (ids) items = items.filter((item) => ids.split(',').includes(item.id))
+    if (hasPhoto) items = items.filter((item) => item.photos.length > 0)
+    if (url.searchParams.get('minPrice')) {
+      items = items.filter((item) => item.pricePerHour >= Number(url.searchParams.get('minPrice')))
+    }
+
+    const total = items.length
+    const start = (page - 1) * limit
     return HttpResponse.json({
-      items,
-      total: items.length,
-      page: 1,
-      limit: 12,
-      hasMore: false,
+      items: items.slice(start, start + limit),
+      total,
+      page,
+      limit,
+      hasMore: start + limit < total,
       cities: ['Москва'],
     })
   }),
 
+  http.get('*/api/stats/districts', () =>
+    HttpResponse.json({ items: [{ district: 'Пресня', count: 2 }], total: 2 }),
+  ),
+
   http.get('*/api/hookers/:id/reviews', () => HttpResponse.json({ items: reviewsFixture, total: 1 })),
 
-  http.get('*/api/favorites', () => HttpResponse.json({ ids: [] })),
-  http.put('*/api/favorites/:id', () => new HttpResponse(null, { status: 204 })),
-  http.delete('*/api/favorites/:id', () => new HttpResponse(null, { status: 204 })),
+  http.get('*/api/stats/districts', () =>
+    HttpResponse.json({ items: [{ district: 'Пресня', city: 'Москва', count: 1 }], total: 1 }),
+  ),
+
+  http.get('*/api/favorites', () => HttpResponse.json({ ids: favoriteIds, total: favoriteIds.length })),
+  http.put('*/api/favorites/:id', ({ params }) => {
+    favoriteIds = [...favoriteIds.filter((id) => id !== params.id), String(params.id)]
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.delete('*/api/favorites/:id', ({ params }) => {
+    favoriteIds = favoriteIds.filter((id) => id !== params.id)
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get('*/api/hookers/:id', ({ params }) => {
-    const item = hookersFixture.find((entry) => entry.id === params.id)
+    const item = [...hookersFixture, ...extraFixture].find((entry) => entry.id === params.id)
     return item
       ? HttpResponse.json(item)
       : new HttpResponse(null, { status: 404 })

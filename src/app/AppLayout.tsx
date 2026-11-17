@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { ProfileChip } from '@/components/widgets/ProfileChip'
 import { useSessionStore } from '@/features/auth/store'
 import { cn } from '@/lib/cn'
+import { titleFor } from '@/app/titles'
 
 const YEAR = new Date().getFullYear()
 
@@ -13,17 +14,6 @@ const navItems = [
   { to: '/', label: 'Анкеты', end: true },
   { to: '/heatmap', label: 'Тепловая карта' },
 ] as const
-
-const titles: Record<string, string> = {
-  '/': 'Главная',
-  '/hookers': 'Анкеты',
-  '/hookers/new': 'Новая анкета',
-  '/auth': 'Вход',
-  '/profile': 'Мой профиль',
-  '/widgets': 'Виджеты',
-  '/favorites': 'Избранное',
-  '/heatmap': 'Тепловая карта',
-}
 
 export function AppLayout() {
   const { isDark, toggle } = useTheme()
@@ -34,7 +24,7 @@ export function AppLayout() {
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const title = titles[pathname]
+    const title = titleFor(pathname)
     document.title = title ? `${title} · HookersPro3000` : 'Страница не найдена · HookersPro3000'
     mainRef.current?.focus()
   }, [pathname])

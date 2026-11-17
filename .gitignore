@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 coverage
+pgdata
 *.local
 
 # Env
@@ -28,3 +29,5 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+smoke.*

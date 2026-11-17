@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
-import { deleteHooker, fetchMyHookers } from '@/features/hookers/api'
+import { deleteHooker, fetchHookers, fetchMyHookers } from '@/features/hookers/api'
 import { fetchMyReviews } from '@/features/auth/api'
-import { fetchHookers } from '@/features/hookers/api'
 import { useHistoryStore } from '@/stores/history'
 import { Stars } from '@/components/widgets/ReviewCard'
 import { useSessionStore } from '@/features/auth/store'
@@ -17,6 +16,7 @@ export default function ProfilePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [removeError, setRemoveError] = useState<string | null>(null)
 
   const mine = useQuery({ queryKey: ['my-hookers'], queryFn: ({ signal }) => fetchMyHookers(signal) })
   const historyIds = useHistoryStore((state) => state.entries).map((entry) => entry.id)
@@ -31,9 +31,11 @@ export default function ProfilePage() {
     mutationFn: (id: string) => deleteHooker(id),
     onSuccess: () => {
       setConfirmId(null)
+      setRemoveError(null)
       void queryClient.invalidateQueries({ queryKey: ['my-hookers'] })
       void queryClient.invalidateQueries({ queryKey: ['hookers'] })
     },
+    onError: (cause) => setRemoveError((cause as Error).message || 'Не удалось удалить анкету'),
   })
 
   return (
@@ -75,10 +77,20 @@ export default function ProfilePage() {
         Мои анкеты{mine.data ? ` (${mine.data.length})` : ''}
       </h2>
 
+      {removeError && (
+        <p role="alert" className="mt-2 rounded-md bg-danger/10 p-2 text-xs text-danger">
+          {removeError}
+        </p>
+      )}
+
       {mine.isPending && (
         <div className="mt-3">
           <Spinner label="Загружаем анкеты" />
         </div>
+      )}
+
+      {mine.isError && (
+        <p className="mt-3 text-xs text-content-muted">Анкеты не загрузились — обновите страницу.</p>
       )}
 
       {mine.isSuccess && mine.data.length === 0 && (
@@ -141,6 +153,9 @@ export default function ProfilePage() {
       </h2>
       {historyIds.length === 0 && (
         <p className="mt-2 text-xs text-content-muted">Пока пусто — открытые анкеты появятся здесь.</p>
+      )}
+      {history.isError && (
+        <p className="mt-2 text-xs text-content-muted">Историю не удалось подгрузить.</p>
       )}
       {history.isSuccess && history.data.items.length > 0 && (
         <ul className="mt-2 divide-y divide-hairline rounded-lg bg-surface-elevated ring-1 ring-hairline">

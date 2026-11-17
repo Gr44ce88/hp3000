@@ -45,8 +45,12 @@ export default function ProfileEditPage() {
       <h1 className="mt-2 text-xl font-medium tracking-tight text-content">Редактирование профиля</h1>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="grid size-14 place-items-center rounded-full bg-mat text-lg font-medium text-content-muted">
-          {user?.avatarUrl ? 'фото' : (user?.name ?? '?').slice(0, 1).toUpperCase()}
+        <span className="grid size-14 place-items-center overflow-hidden rounded-full bg-mat text-lg font-medium text-content-muted">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="size-full object-cover" />
+          ) : (
+            (user?.name ?? '?').slice(0, 1).toUpperCase()
+          )}
         </span>
         <div>
           <Button size="sm" variant="secondary" type="button" disabled>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HookerForm } from '@/features/hookers/HookerForm'
 import { fetchHooker, updateHooker, type ListingPayload } from '@/features/hookers/api'
+import type { City } from '@/features/hookers/cities'
 import { Spinner } from '@/components/ui/Spinner'
 
 export default function EditHookerPage() {
@@ -60,7 +61,7 @@ export default function EditHookerPage() {
             name: item.name,
             age: item.age,
             height: item.height,
-            city: item.city as 'Москва',
+            city: item.city as City,
             region: item.region,
             phone: item.phone,
             pricePerHour: item.pricePerHour,

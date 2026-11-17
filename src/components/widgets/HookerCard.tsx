@@ -84,10 +84,11 @@ export function HookerCard({
       {onToggleFavorite && id && (
         <button
           type="button"
+          data-slot="favorite"
           onClick={() => onToggleFavorite(id)}
           aria-pressed={isFavorite}
           aria-label={isFavorite ? `Убрать из избранного: ${name}` : `В избранное: ${name}`}
-          className="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-full bg-black/45 text-[11px] text-white backdrop-blur transition-colors hover:bg-black/65"
+          className="absolute top-1.5 right-1.5 z-10 grid size-6 place-items-center rounded-full bg-black/45 text-[11px] text-white backdrop-blur transition-colors hover:bg-black/65"
         >
           {isFavorite ? '♥' : '♡'}
         </button>

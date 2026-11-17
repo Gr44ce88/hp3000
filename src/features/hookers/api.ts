@@ -11,6 +11,9 @@ function toQuery(params: HookerListParams): string {
   if (params.page) search.set('page', String(params.page))
   if (params.limit) search.set('limit', String(params.limit))
   if (params.ids?.length) search.set('ids', params.ids.join(','))
+  if (params.hasPhoto) search.set('hasPhoto', '1')
+  if (params.reviewed) search.set('reviewed', '1')
+  if (params.center) search.set('center', '1')
   const query = search.toString()
   return query ? `?${query}` : ''
 }
@@ -77,7 +80,6 @@ export async function deleteHooker(id: string): Promise<void> {
 }
 
 export type ReviewSort = 'new' | 'old' | 'best' | 'worst'
-
 export async function fetchReviews(
   id: string,
   sort: ReviewSort = 'new',
@@ -96,4 +98,12 @@ export async function createReview(
 ): Promise<Review> {
   const { data } = await apiClient.post<Review>(`/hookers/${id}/reviews`, input)
   return data
+}
+
+export type DistrictStat = { district: string; city: string; count: number }
+
+/** Плотность анкет по районам для тепловой карты. */
+export async function fetchDistrictStats(signal?: AbortSignal): Promise<DistrictStat[]> {
+  const { data } = await apiClient.get<{ items: DistrictStat[] }>('/stats/districts', { signal })
+  return data.items
 }

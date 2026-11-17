@@ -1,28 +1,42 @@
-import { useEffect, useMemo, useState } from 'react'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { SortFilterBar } from '@/components/widgets/SortFilterBar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
 import { fetchHookers } from '@/features/hookers/api'
-import type { FilterKey, SortKey } from '@/features/hookers/sorting'
+import { FILTER_OPTIONS, SORT_OPTIONS, type FilterKey, type SortKey } from '@/features/hookers/sorting'
 import { useSessionStore } from '@/features/auth/store'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { useViewModeStore } from '@/stores/viewMode'
 
 const PAGE_SIZE = 12
+/** Фильтр «До 3 000 ₽» превращается в потолок цены. */
+const CHEAP_LIMIT = 3000
 const FILTER_OUTSIDE_AUTH = ['with-photo', 'up-to-3000', 'reviewed', 'center'] as const
 
+const isFilterKey = (value: string): value is FilterKey =>
+  FILTER_OPTIONS.some((option) => option.value === value)
+
+const isSortKey = (value: string | null): value is SortKey =>
+  SORT_OPTIONS.some((option) => option.value === value)
+
 export default function HomePage() {
-  const [sort, setSort] = useState<SortKey>('price-asc')
-  const [filters, setFilters] = useState<FilterKey[]>([])
-  const [query, setQuery] = useState('')
-  const [debounced, setDebounced] = useState('')
-  const [city, setCity] = useState('')
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [page, setPage] = useState(1)
+  const [params, setParams] = useSearchParams()
+
+  // Всё состояние каталога живёт в адресной строке: переживает перезагрузку и шарится ссылкой.
+  const query = params.get('q') ?? ''
+  const city = params.get('city') ?? ''
+  const minPrice = params.get('min') ?? ''
+  const maxPrice = params.get('max') ?? ''
+  const sortParam = params.get('sort')
+  const sort: SortKey = isSortKey(sortParam) ? sortParam : 'price-asc'
+  const filters = (params.get('f') ?? '').split(',').filter(isFilterKey)
+  const onlyFavorites = filters.includes('favorites')
+
+  const [search, setSearch] = useState(query)
 
   const token = useSessionStore((state) => state.token)
   const favoritesQuery = useFavoriteIds()
@@ -31,66 +45,91 @@ export default function HomePage() {
   const mode = useViewModeStore((state) => state.mode)
   const setMode = useViewModeStore((state) => state.setMode)
 
+  const update = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(params)
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === '') next.delete(key)
+      else next.set(key, value)
+    }
+    setParams(next, { replace: true })
+  }
+
+  // Ввод в поиске дебаунсим и только потом пишем в адрес.
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(query.trim()), 300)
+    const timer = setTimeout(() => {
+      const value = search.trim()
+      const current = params.get('q') ?? ''
+      if (value === current) return
+      const next = new URLSearchParams(params)
+      if (value) next.set('q', value)
+      else next.delete('q')
+      setParams(next, { replace: true })
+    }, 300)
     return () => clearTimeout(timer)
-  }, [query])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
-  const onlyFavorites = filters.includes('favorites')
+  const maxPriceEffective = filters.includes('up-to-3000')
+    ? String(Math.min(Number(maxPrice) || CHEAP_LIMIT, CHEAP_LIMIT))
+    : maxPrice
 
-  const hookers = useQuery({
-    queryKey: ['hookers', debounced, city, minPrice, maxPrice, sort, page, onlyFavorites, favorites],
-    queryFn: ({ signal }) =>
+  const list = useInfiniteQuery({
+    queryKey: [
+      'hookers',
+      { q: query, city, minPrice, maxPrice: maxPriceEffective, sort, filters, ids: onlyFavorites ? favorites : [] },
+    ],
+    queryFn: ({ pageParam, signal }) =>
       fetchHookers(
         {
-          q: debounced || undefined,
+          q: query || undefined,
           city: city || undefined,
           minPrice: Number(minPrice) || undefined,
-          maxPrice: Number(maxPrice) || undefined,
+          maxPrice: Number(maxPriceEffective) || undefined,
           sort,
-          page,
+          page: pageParam,
           limit: PAGE_SIZE,
           ids: onlyFavorites ? favorites : undefined,
+          hasPhoto: filters.includes('with-photo') || undefined,
+          reviewed: filters.includes('reviewed') || undefined,
+          center: filters.includes('center') || undefined,
         },
         signal,
       ),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
+    // Старые данные держим на экране, пока грузится новая выборка.
     placeholderData: keepPreviousData,
+    // Фильтр избранного при пустом списке: ждать нечего, показываем пустое состояние.
+    enabled: !onlyFavorites || favorites.length > 0,
   })
 
-  const visible = useMemo(() => {
-    const items = hookers.data?.items ?? []
-    return items.filter((item) => {
-      if (filters.includes('up-to-3000') && item.pricePerHour > 3000) return false
-      if (filters.includes('reviewed') && item.reviewsCount === 0) return false
-      return true
-    })
-  }, [hookers.data, filters])
+  const pages = list.data?.pages ?? []
+  const favoritesReady = !onlyFavorites || favoritesQuery.isSuccess
+  // Пустое избранное: запрос не нужен, а старые данные мешать не должны.
+  const favoritesEmpty = onlyFavorites && favoritesQuery.isSuccess && favorites.length === 0
+  const items = favoritesEmpty ? [] : pages.flatMap((page) => page.items)
+  const total = favoritesEmpty ? 0 : (pages[0]?.total ?? 0)
+  const showEmpty = items.length === 0 && favoritesReady && (list.isSuccess || favoritesEmpty)
 
   const toggleFilter = (filter: FilterKey) => {
-    setPage(1)
-    setFilters((current) =>
-      current.includes(filter) ? current.filter((item) => item !== filter) : [...current, filter],
-    )
+    const next = filters.includes(filter)
+      ? filters.filter((item) => item !== filter)
+      : [...filters, filter]
+    update({ f: next.join(',') })
   }
 
   const resetAll = () => {
-    setPage(1)
-    setFilters([])
-    setQuery('')
-    setCity('')
-    setMinPrice('')
-    setMaxPrice('')
+    setSearch('')
+    setParams(new URLSearchParams(), { replace: true })
   }
-
-  const total = hookers.data?.total ?? 0
 
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-medium tracking-tight text-content">Анкеты</h1>
-          <p className="mt-0.5 text-[11px] text-content-muted tabular-nums">
-            {hookers.isSuccess ? `Найдено ${total}` : 'Загружаем каталог'}
+          <p className="mt-0.5 text-[11px] text-content-muted tabular-nums" aria-live="polite">
+            {list.isSuccess ? `Найдено ${total}` : 'Загружаем каталог'}
           </p>
         </div>
 
@@ -117,7 +156,7 @@ export default function HomePage() {
               </button>
             ))}
           </div>
-          <Button size="sm" variant="secondary" onClick={() => void hookers.refetch()}>
+          <Button size="sm" variant="secondary" onClick={() => void list.refetch()}>
             Обновить
           </Button>
         </div>
@@ -127,27 +166,22 @@ export default function HomePage() {
         <aside className="sm:w-56 sm:shrink-0">
           <div className="sticky top-[3.5rem] space-y-3">
             <Input
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setPage(1)
-              }}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Имя, район или город"
               aria-label="Поиск анкет"
+              type="search"
               className="h-8 text-xs sm:text-xs"
             />
 
             <select
               value={city}
-              onChange={(event) => {
-                setCity(event.target.value)
-                setPage(1)
-              }}
+              onChange={(event) => update({ city: event.target.value })}
               aria-label="Город"
               className="h-8 w-full rounded-md bg-chip px-2 text-xs text-content focus:outline-none"
             >
               <option value="">Все города</option>
-              {(hookers.data?.cities ?? []).map((item) => (
+              {(list.data?.pages[0]?.cities ?? []).map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -157,10 +191,7 @@ export default function HomePage() {
             <div className="flex gap-2">
               <Input
                 value={minPrice}
-                onChange={(event) => {
-                  setMinPrice(event.target.value.replace(/\D/g, ''))
-                  setPage(1)
-                }}
+                onChange={(event) => update({ min: event.target.value.replace(/\D/g, '') })}
                 placeholder="от ₽"
                 aria-label="Цена от"
                 inputMode="numeric"
@@ -168,10 +199,7 @@ export default function HomePage() {
               />
               <Input
                 value={maxPrice}
-                onChange={(event) => {
-                  setMaxPrice(event.target.value.replace(/\D/g, ''))
-                  setPage(1)
-                }}
+                onChange={(event) => update({ max: event.target.value.replace(/\D/g, '') })}
                 placeholder="до ₽"
                 aria-label="Цена до"
                 inputMode="numeric"
@@ -182,10 +210,7 @@ export default function HomePage() {
             <SortFilterBar
               vertical
               sort={sort}
-              onSortChange={(value) => {
-                setSort(value)
-                setPage(1)
-              }}
+              onSortChange={(value) => update({ sort: value })}
               activeFilters={filters}
               availableFilters={token ? undefined : FILTER_OUTSIDE_AUTH}
               onToggleFilter={toggleFilter}
@@ -199,16 +224,16 @@ export default function HomePage() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          {hookers.isPending && (
+          {list.isPending && (
             <div className="mt-4">
               <Spinner label="Загружаем анкеты" />
             </div>
           )}
 
-          {hookers.isError && (
+          {list.isError && (
             <div className="mt-2 rounded-lg bg-surface-elevated p-4 text-xs ring-1 ring-hairline">
               <p className="text-[13px] font-medium text-content">
-                {[502, 504].includes((hookers.error as { status?: number }).status ?? 0)
+                {[502, 504].includes((list.error as { status?: number }).status ?? 0)
                   ? 'Сервер не отвечает.'
                   : 'Не удалось загрузить анкеты.'}
               </p>
@@ -216,7 +241,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {hookers.isSuccess && visible.length === 0 && (
+          {showEmpty && (
             <div className="rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
               <p className="text-sm font-medium text-content">
                 {onlyFavorites ? 'В избранном пусто' : 'Под условия ничего не подошло'}
@@ -232,7 +257,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {visible.length > 0 && (
+          {items.length > 0 && (
             <>
               <ul
                 className={
@@ -241,7 +266,7 @@ export default function HomePage() {
                     : 'space-y-3'
                 }
               >
-                {visible.map((item) => (
+                {items.map((item) => (
                   <li key={item.id} className="min-w-0">
                     <HookerCard
                       id={item.id}
@@ -252,6 +277,7 @@ export default function HomePage() {
                       height={item.height}
                       about={item.about}
                       services={item.services.join(', ')}
+                      photoUrl={item.photos[0]}
                       rating={item.rating}
                       reviewsCount={item.reviewsCount}
                       isNew={item.isNew}
@@ -268,14 +294,19 @@ export default function HomePage() {
                 ))}
               </ul>
 
-              <div className="flex items-center justify-center gap-3 py-8">
-                {hookers.data?.hasMore ? (
-                  <Button size="sm" onClick={() => setPage((value) => value + 1)}>
+              <div className="flex flex-col items-center gap-2 py-8">
+                {list.hasNextPage && (
+                  <Button
+                    size="sm"
+                    isLoading={list.isFetchingNextPage}
+                    onClick={() => void list.fetchNextPage()}
+                  >
                     Показать ещё
                   </Button>
-                ) : (
-                  <span className="text-[11px] text-content-muted">Это все {total} анкет</span>
                 )}
+                <span className="text-[11px] text-content-muted tabular-nums">
+                  Показано {items.length} из {total}
+                </span>
               </div>
             </>
           )}

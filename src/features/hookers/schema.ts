@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CITIES } from '@/features/hookers/cities'
 
 /** Заглушка: сумму и способы оплаты определим, когда подключим платежи. */
 export const PUBLICATION_COMMISSION = 490
@@ -20,7 +21,7 @@ export const listingSchema = z.object({
     .min(2, 'Минимум 2 символа')
     .max(60, 'Не длиннее 60 символов'),
   age: z.coerce.number('Введите возраст').int().min(18, 'От 18 лет').max(80, 'Не больше 80'),
-  city: z.enum(['Москва'], 'Выберите город'),
+  city: z.enum(CITIES, 'Выберите город'),
   region: z.string().trim().min(2, 'Укажите регион').max(60, 'Не длиннее 60 символов'),
   phone: z
     .string()

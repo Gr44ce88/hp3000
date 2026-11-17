@@ -1,17 +1,40 @@
-import { MapPlaceholder } from '@/components/widgets/MapPlaceholder'
+import { useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { YandexMap } from '@/components/widgets/YandexMap'
+import { Spinner } from '@/components/ui/Spinner'
+import { fetchDistrictStats } from '@/features/hookers/api'
+
+/** Порог тона: сколько анкет в районе считается «много». */
+const HOT = 3
+const WARM = 2
 
 export default function HeatmapPage() {
+  const navigate = useNavigate()
+  const stats = useQuery({
+    queryKey: ['stats', 'districts'],
+    queryFn: ({ signal }) => fetchDistrictStats(signal),
+    staleTime: 60_000,
+  })
+
+  const items = stats.data ?? []
+  const busiest = items[0]
+
+  const pick = useCallback((district: string) => {
+    navigate(`/hookers?q=${encodeURIComponent(district)}`)
+  }, [navigate])
+
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-xl font-medium tracking-tight text-content">Тепловая карта</h1>
       <p className="mt-0.5 text-[11px] text-content-muted">
-        Плотность анкет по районам. Пока заглушка — данные подключим позже.
+        Плотность анкет по районам на Яндекс.Картах. Клик по пятну открывает анкеты этого района.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_220px]">
         <div className="relative">
-          <MapPlaceholder address="Москва" />
-          <span className="absolute top-2 right-2 rounded-full bg-black/45 px-2 py-瘪 text-[11px] text-white backdrop-blur">
+          <YandexMap points={items} hot={HOT} warm={WARM} onPick={pick} />
+          <span className="absolute top-2 right-2 rounded-full bg-black/45 px-2 py-0.5 text-[11px] text-white backdrop-blur">
             слой плотности
           </span>
         </div>
@@ -20,8 +43,8 @@ export default function HeatmapPage() {
           <p className="text-[11px] tracking-wide text-content-muted uppercase">Легенда</p>
           <ul className="space-y-2 text-xs text-content-muted">
             {[
-              ['bg-danger', 'много анкет'],
-              ['bg-rating', 'средне'],
+              ['bg-danger', `много анкет (${HOT}+)`],
+              ['bg-rating', `${WARM} анкеты`],
               ['bg-line', 'мало'],
             ].map(([tone, label]) => (
               <li key={label} className="flex items-center gap-2">
@@ -31,19 +54,48 @@ export default function HeatmapPage() {
             ))}
           </ul>
           <p className="border-t border-hairline pt-3 text-[11px] text-content-muted">
-            Заглушка: реальный слой, зум и подсказки районов появятся после интеграции карт.
+            Точки ставятся по району; если района нет в справочнике координат — по центру города.
           </p>
         </aside>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {['Пресня', 'Хамовники', 'Басманный', 'Сити'].map((district) => (
-          <div key={district} className="rounded-lg bg-mat p-3 ring-1 ring-hairline">
-            <p className="text-xs font-medium text-content">{district}</p>
-            <p className="mt-1 text-[11px] text-content-muted">— анкет</p>
-          </div>
-        ))}
-      </div>
+      {stats.isPending && (
+        <div className="mt-6">
+          <Spinner label="Считаем районы" />
+        </div>
+      )}
+
+      {stats.isError && (
+        <p className="mt-6 text-xs text-content-muted">Не удалось получить статистику по районам.</p>
+      )}
+
+      {stats.isSuccess && (
+        <>
+          <p className="mt-6 text-[11px] tracking-wide text-content-muted uppercase">
+            Районы по плотности{busiest ? ` · максимум: ${busiest.district}` : ''}
+          </p>
+          {items.length === 0 ? (
+            <p className="mt-2 text-xs text-content-muted">Пока ни одной анкеты с районом.</p>
+          ) : (
+            <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {items.map((item) => (
+                <li key={item.district} className="rounded-lg bg-mat p-3 ring-1 ring-hairline">
+                  <span
+                    aria-hidden="true"
+                    className={`mb-2 block h-1 rounded-full ${
+                      item.count >= HOT ? 'bg-danger' : item.count >= WARM ? 'bg-rating' : 'bg-line'
+                    }`}
+                  />
+                  <p className="text-xs font-medium text-content">{item.district}</p>
+                  <p className="mt-1 text-[11px] text-content-muted tabular-nums">
+                    {item.count} {item.count === 1 ? 'анкета' : 'анкет'}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   )
 }

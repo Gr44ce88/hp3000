@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HookerCard } from '@/components/widgets/HookerCard'
@@ -15,6 +15,28 @@ describe('HookerCard', () => {
     expect(screen.getByText('Аня,')).toBeInTheDocument()
     expect(screen.getByText(/5\s?000/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Анкета: Аня/ })).toHaveAttribute('href', '/hookers/1')
+  })
+
+  it('сердечко переключает избранное, а не открывает анкету', async () => {
+    const user = userEvent.setup()
+    const onToggle = vi.fn()
+    renderWithProviders(
+      <HookerCard
+        id="1"
+        name="Аня"
+        age={24}
+        city="Москва"
+        pricePerHour={5000}
+        href="/hookers/1"
+        onToggleFavorite={onToggle}
+      />,
+    )
+
+    const heart = screen.getByRole('button', { name: 'В избранное: Аня' })
+    expect(heart).toHaveAttribute('data-slot', 'favorite')
+    await user.click(heart)
+
+    expect(onToggle).toHaveBeenCalledWith('1')
   })
 
   it('книжная ориентация помечает карточку как четверть ширины', () => {
