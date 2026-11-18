@@ -15,7 +15,9 @@ export type Hooker = {
   rating: number
   reviewsCount: number
   photos: string[]
+  mainPhoto: string
   isNew: boolean
+  isPublished: boolean
   createdAt: string
   ownerId: string | null
 }
@@ -32,6 +34,7 @@ export type Review = {
 export type HookerListParams = {
   q?: string
   city?: string
+  service?: string
   minPrice?: number
   maxPrice?: number
   sort?: string

@@ -31,3 +31,9 @@ pgdata
 *.sw?
 
 smoke.*
+
+# Загруженные фото анкет
+public/uploads
+
+# Временные тестовые фото
+.test-photos

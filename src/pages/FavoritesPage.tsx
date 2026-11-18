@@ -84,7 +84,7 @@ export default function FavoritesPage() {
                 city={item.city}
                 pricePerHour={item.pricePerHour}
                 height={item.height}
-                photoUrl={item.photos[0]}
+                photoUrl={item.mainPhoto || item.photos[0]}
                 rating={item.rating}
                 reviewsCount={item.reviewsCount}
                 isFavorite

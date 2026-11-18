@@ -8,6 +8,7 @@
     "dev:api": "tsx watch api/src/server.ts",
     "db:migrate": "tsx api/src/db/migrate.ts",
     "db:seed": "tsx api/src/db/seed.ts",
+    "db:clear": "tsx api/src/db/clear.ts",
     "db:reset": "tsx api/src/db/migrate.ts reset",
     "db:start": "bash scripts/db.sh start",
     "db:stop": "bash scripts/db.sh stop",
@@ -31,6 +32,7 @@
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "express": "^5.3.0",
+    "multer": "^2.5.0",
     "pg": "^8.23.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -47,6 +49,7 @@
     "@testing-library/user-event": "^14.6.9",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
@@ -63,10 +66,5 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

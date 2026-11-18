@@ -12,6 +12,25 @@ export const PAYMENT_METHODS = [
   { value: 'balance', label: 'Баланс', hint: 'Скоро', disabled: true },
 ] as const
 
+/** Услуги для выбора в анкете — одна на анкету, набор как на профильных площадках. */
+export const SERVICES = [
+  'Классика',
+  'Минет',
+  'Анал',
+  'МБР',
+  'Массаж',
+  'Тантрический массаж',
+  'GFE',
+  'Эскорт',
+  'Ужин',
+  'Выезд',
+] as const
+
+export type Service = (typeof SERVICES)[number]
+
+/** Сколько фото разрешено в анкете. */
+export const PHOTOS_MAX = 6
+
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]['value']
 
 export const listingSchema = z.object({
@@ -29,7 +48,10 @@ export const listingSchema = z.object({
     .regex(/^[+\d][\d\s()-]{9,18}$/, 'Формат: +7 900 000-00-00'),
   height: z.coerce.number('Введите рост').int().min(140, 'От 140 см').max(210, 'До 210 см'),
   pricePerHour: z.coerce.number('Укажите цену').int().min(1, 'Минимум 1').max(500_000),
-  services: z.string().trim().max(300, 'Не длиннее 300 символов').optional(),
+  /** Чекбоксы услуг: можно выбрать несколько. */
+  services: z.array(z.string()).max(SERVICES.length, 'Слишком много услуг').default([]),
+  photos: z.array(z.string()).max(PHOTOS_MAX, `Не больше ${PHOTOS_MAX} фото`).default([]),
+  mainPhoto: z.string().optional(),
   about: z.string().trim().max(255, 'Не больше 255 символов').optional(),
   paymentMethod: z.enum(
     PAYMENT_METHODS.filter((method) => !('disabled' in method)).map(

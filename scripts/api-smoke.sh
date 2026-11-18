@@ -55,7 +55,7 @@ expect 200 "$(call PATCH /me '{"name":"Смоук 2","email":"'"$EMAIL"'"}' "$TO
 expect 422 "$(call POST /hookers '{"name":"А","age":12}' "$TOKEN")" 'валидация анкеты'
 expect 201 "$(call POST /hookers '{"name":"Тестовая","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-01","height":170,"pricePerHour":3000,"services":["Классика"],"about":"Смоук-анкета"}' "$TOKEN")" 'создание анкеты'
 ID="$(json .id)"
-expect 200 "$(call GET "/hookers/$ID")" 'чтение своей анкеты'
+expect 200 "$(call GET "/hookers/$ID" '' "$TOKEN")" 'чтение своей анкеты'
 expect 200 "$(call PATCH "/hookers/$ID" '{"pricePerHour":3200}' "$TOKEN")" 'правка анкеты'
 expect 200 "$(call GET /me/hookers '' "$TOKEN")" 'мои анкеты'
 expect 200 "$(call GET /me/history '' "$TOKEN")" 'история просмотров'
@@ -67,18 +67,77 @@ expect 200 "$(call GET "/hookers/$ID/reviews?sort=best")" 'список отзы
 expect 200 "$(call GET /me/reviews '' "$TOKEN")" 'мои отзывы'
 expect 200 "$(call GET /stats/districts)" 'плотность по районам'
 
+# ——— фото и услуги ———
+node -e "require('fs').writeFileSync(process.argv[1], Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==','base64'))" "$TMP/p.png"
+expect 401 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/uploads")" 'загрузка без токена'
+expect 201 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/uploads" -H "authorization: Bearer $TOKEN" -F "file=@$TMP/p.png")" 'загрузка фото'
+PHOTO="$(json .url)"
+printf '%s' '{"name":"С фото","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-07","height":166,"pricePerHour":2500,"services":["GFE"],"photos":["'"$PHOTO"'"],"mainPhoto":"'"$PHOTO"'"}' >"$TMP/ph.json"
+expect 201 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/hookers" -H 'content-type: application/json' -H "authorization: Bearer $TOKEN" -d "@$TMP/ph.json")" 'анкета с фото и услугой'
+PH_ID="$(json .id)"
+MAIN="$(json .mainPhoto)"
+if [ "$MAIN" = "$PHOTO" ]; then
+  printf 'ok   главное фото сохранено\n'
+else
+  printf 'FAIL главное фото не сохранилось: %s\n' "$MAIN"
+  FAILED=$((FAILED + 1))
+fi
+expect 200 "$(call GET '/hookers?service=GFE&limit=24')" 'фильтр по услуге'
+expect 204 "$(call DELETE "/hookers/$PH_ID" '' "$TOKEN")" 'уборка анкеты с фото'
+
 expect 204 "$(call PUT "/favorites/$ID" '' "$TOKEN")" 'в избранное'
 expect 200 "$(call GET /favorites '' "$TOKEN")" 'список избранного'
 expect 204 "$(call DELETE "/favorites/$ID" '' "$TOKEN")" 'из избранного'
 
-expect 200 "$(call POST /auth/demo)" 'демо-логин'
-DEMO_TOKEN="$(json .token)"
-expect 204 "$(call POST /auth/logout '' "$DEMO_TOKEN")" 'выход'
-expect 401 "$(call GET /me '' "$DEMO_TOKEN")" 'токен после выхода не работает'
+DEMO_CODE="$(call POST /auth/demo)"
+if [ "$DEMO_CODE" = "200" ]; then
+  DEMO_TOKEN="$(json .token)"
+  expect 204 "$(call POST /auth/logout '' "$DEMO_TOKEN")" 'выход'
+  expect 401 "$(call GET /me '' "$DEMO_TOKEN")" 'токен после выхода не работает'
+else
+  printf 'ok   демо-логин пропущен (%s — база без демо-аккаунта)\n' "$DEMO_CODE"
+fi
 
 expect 204 "$(call DELETE "/hookers/$ID" '' "$TOKEN")" 'удаление анкеты'
 expect 404 "$(call GET "/hookers/$ID")" 'удалённая анкета не находится'
 expect 404 "$(call GET /мусор)" 'неизвестная ручка'
+
+# ——— оплата публикации (FreeKassa, тестовые ключи из .env) ———
+expect 201 "$(call POST /hookers '{"name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'
+PAID_ID="$(json .id)"
+expect 200 "$(call GET "/hookers/$PAID_ID" '' "$TOKEN")" 'своя неоплаченная видна'
+FEE="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$TMP/body','utf8')).pricePerHour)")"
+expect 201 "$(call POST /payments "{\"hookerId\":\"$PAID_ID\",\"method\":\"sbp\"}" "$TOKEN")" 'создание заявки'
+PAY_ID="$(json .payment.id)"
+URL="$(json .paymentUrl)"
+AMOUNT="$(node -e "console.log(Number(JSON.parse(require('fs').readFileSync('$TMP/body','utf8')).payment.amount).toFixed(2))")"
+if printf '%s' "$URL" | grep -q 'pay.fk.money'; then
+  printf 'ok   ссылка ведёт на форму FreeKassa\n'
+else
+  printf 'FAIL ссылка не на pay.fk.money: %s\n' "$URL"
+  FAILED=$((FAILED + 1))
+fi
+expect 200 "$(call GET "/payments/$PAID_ID" '' "$TOKEN")" 'статус оплаты'
+ORDER_ID="$(printf '%s' "$URL" | sed -n 's/.*[?&]o=\([^&]*\).*/\1/p')"
+GOOD_SIGN="$(node -e "console.log(require('crypto').createHash('md5').update('12345:' + process.argv[1] + ':dev-secret-2:' + process.argv[2]).digest('hex'))" "$AMOUNT" "$ORDER_ID")"
+expect 200 "$(call POST '/payments/freekassa/notify' "{\"MERCHANT_ID\":\"12345\",\"AMOUNT\":\"$AMOUNT\",\"MERCHANT_ORDER_ID\":\"$ORDER_ID\",\"SIGN\":\"deadbeef\"}")" 'оповещение с плохой подписью'
+if [ "$(cat "$TMP/body")" = 'bad sign' ]; then
+  printf 'ok   плохая подпись отбита\n'
+else
+  printf 'FAIL плохая подпись прошла: %s\n' "$(cat "$TMP/body")"
+  FAILED=$((FAILED + 1))
+fi
+expect 200 "$(call POST '/payments/freekassa/notify' "{\"MERCHANT_ID\":\"12345\",\"AMOUNT\":\"$AMOUNT\",\"MERCHANT_ORDER_ID\":\"$ORDER_ID\",\"SIGN\":\"$GOOD_SIGN\"}")" 'оповещение с верной подписью'
+if [ "$(cat "$TMP/body")" = 'YES' ]; then
+  printf 'ok   ответ YES\n'
+else
+  printf 'FAIL на верную подпись ответ: %s\n' "$(cat "$TMP/body")"
+  FAILED=$((FAILED + 1))
+fi
+expect 200 "$(call GET "/hookers/$PAID_ID")" 'анкета опубликована после оплаты'
+expect 200 "$(call POST '/payments/freekassa/notify' "{\"MERCHANT_ID\":\"12345\",\"AMOUNT\":\"$AMOUNT\",\"MERCHANT_ORDER_ID\":\"$ORDER_ID\",\"SIGN\":\"$GOOD_SIGN\"}")" 'повторное оповещение'
+expect 204 "$(call DELETE "/hookers/$PAID_ID" '' "$TOKEN")" 'уборка платной анкеты'
+
 expect 204 "$(call POST /auth/logout '' "$TOKEN")" 'выход смоук-аккаунта'
 
 rm -rf "$TMP"

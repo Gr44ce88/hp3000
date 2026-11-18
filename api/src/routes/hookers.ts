@@ -52,7 +52,7 @@ hookersRouter.get(
   '/hookers',
   handle(async (req, res) => {
     const params = parseBody(listQuerySchema, req.query)
-    const where: string[] = []
+    const where: string[] = ['h.is_published']
     const values: unknown[] = []
 
     if (params.q) {
@@ -62,6 +62,10 @@ hookersRouter.get(
     if (params.city) {
       values.push(params.city)
       where.push(`h.city = $${values.length}`)
+    }
+    if (params.service) {
+      values.push(params.service)
+      where.push(`$${values.length} = any(h.services)`)
     }
     if (params.ids) {
       const ids = params.ids.split(',').map((id) => id.trim()).filter((id) => UUID_RE.test(id))
@@ -110,6 +114,8 @@ hookersRouter.get(
   attachUser,
   handle(async (req, res) => {
     const hooker = await findHooker(req.params.id)
+    // Неоплаченная анкета видна только владельцу.
+    if (!hooker.is_published && hooker.owner_id !== req.user?.id) throw notFound()
 
     // Просмотр пишем только для чужих анкет и только авторизованным.
     if (req.user && hooker.owner_id !== req.user.id) {
@@ -130,8 +136,8 @@ hookersRouter.post(
   handle(async (req, res) => {
     const input = parseBody(listingSchema, req.body)
     const rows = await query<{ id: string }>(
-      `insert into hookers (owner_id, name, age, city, district, region, phone, height, price_per_hour, services, about)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `insert into hookers (owner_id, name, age, city, district, region, phone, height, price_per_hour, services, about, photos, main_photo, is_published)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false)
        returning id`,
       [
         currentUser(req).id,
@@ -145,6 +151,8 @@ hookersRouter.post(
         input.pricePerHour,
         input.services,
         input.about,
+        input.photos,
+        input.mainPhoto || input.photos[0] || '',
       ],
     )
     res.status(201).json(toView(await findHooker(rows[0]!.id)))
@@ -171,11 +179,14 @@ hookersRouter.patch(
       pricePerHour: req.body?.pricePerHour ?? existing.price_per_hour,
       services: req.body?.services ?? existing.services,
       about: req.body?.about ?? existing.about,
+      photos: req.body?.photos ?? existing.photos,
+      mainPhoto: req.body?.mainPhoto ?? existing.main_photo,
     })
 
     await one(
       `update hookers set name = $2, age = $3, city = $4, district = $5, region = $6,
-              phone = $7, height = $8, price_per_hour = $9, services = $10, about = $11
+              phone = $7, height = $8, price_per_hour = $9, services = $10, about = $11,
+              photos = $12, main_photo = $13
        where id = $1`,
       [
         existing.id,
@@ -189,6 +200,8 @@ hookersRouter.patch(
         input.pricePerHour,
         input.services,
         input.about,
+        input.photos,
+        input.mainPhoto || input.photos[0] || '',
       ],
     )
     res.json(toView(await findHooker(existing.id)))

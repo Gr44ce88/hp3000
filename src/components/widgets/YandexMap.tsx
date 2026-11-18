@@ -121,7 +121,7 @@ export function YandexMap({ points, hot, warm, onPick, className }: YandexMapPro
       const label = new ymaps.Placemark(
         coords,
         { hintContent: `${point.district}: ${point.count}`, iconContent: String(point.count) },
-        { preset: 'islands#blueDotIconWithCaption' },
+        { preset: 'islands#darkBlueStretchyIcon' },
       )
       if (onPick) label.events.add('click', () => onPick(point.district))
       map.geoObjects.add(label)

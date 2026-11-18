@@ -65,7 +65,9 @@ export default function EditHookerPage() {
             region: item.region,
             phone: item.phone,
             pricePerHour: item.pricePerHour,
-            services: item.services.join(', '),
+            services: item.services,
+            photos: item.photos,
+            mainPhoto: item.mainPhoto,
             about: item.about,
           }}
           onSubmit={(values) => {

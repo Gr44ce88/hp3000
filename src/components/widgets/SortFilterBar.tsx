@@ -1,5 +1,6 @@
 import type { FilterKey, SortKey } from '@/features/hookers/sorting'
 import { FILTER_OPTIONS, SORT_OPTIONS } from '@/features/hookers/sorting'
+import { SERVICES } from '@/features/hookers/schema'
 import { cn } from '@/lib/cn'
 
 export type SortFilterBarProps = {
@@ -7,6 +8,9 @@ export type SortFilterBarProps = {
   onSortChange: (sort: SortKey) => void
   activeFilters: FilterKey[]
   onToggleFilter: (filter: FilterKey) => void
+  /** выбранная услуга; пусто — все */
+  service?: string
+  onServiceChange?: (service: string) => void
   /** какие фильтры показывать; по умолчанию все */
   availableFilters?: readonly FilterKey[]
   /** вертикальная раскладка для сайдбара */
@@ -27,13 +31,15 @@ export function SortFilterBar({
   onSortChange,
   activeFilters,
   onToggleFilter,
+  service = '',
+  onServiceChange,
   availableFilters,
   vertical = false,
   onReset,
   resultCount,
   className,
 }: SortFilterBarProps) {
-  const hasActive = activeFilters.length > 0
+  const hasActive = activeFilters.length > 0 || Boolean(service)
 
   return (
     <div className={cn(vertical ? 'space-y-4' : 'flex flex-wrap items-center gap-x-3 gap-y-2', className)}>
@@ -74,6 +80,34 @@ export function SortFilterBar({
           )
         })}
       </div>
+
+      {onServiceChange && (
+        <>
+          <span className="block text-[11px] tracking-wide text-content-muted uppercase">
+            Услуга
+          </span>
+          <div
+            role="group"
+            aria-label="Фильтр по услугам"
+            className={cn('flex gap-1.5', vertical ? 'flex-col items-start' : 'flex-wrap')}
+          >
+            {SERVICES.map((option) => {
+              const active = service === option
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => onServiceChange(active ? '' : option)}
+                  className={cn(pill, active ? pillActive : pillIdle)}
+                >
+                  {option}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {hasActive && (
         <button

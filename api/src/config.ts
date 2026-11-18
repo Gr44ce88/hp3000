@@ -38,4 +38,24 @@ export const config = {
   pageLimitMax: 24,
   /** Города, доступные в фильтре каталога. Тот же список — src/features/hookers/cities.ts. */
   cities: ['Москва', 'Химки', 'Одинцово', 'Люберцы', 'Красногорск'],
+  /** Комиссия за публикацию анкеты, ₽. */
+  publicationFee: Number(process.env.PUBLICATION_FEE ?? 490),
+  freekassa: {
+    merchantId: process.env.FREEKASSA_MERCHANT_ID ?? '',
+    /** Секретное слово для подписи платёжной формы. */
+    secret1: process.env.FREEKASSA_SECRET_1 ?? '',
+    /** Секретное слово 2 — для проверки подписи оповещения. */
+    secret2: process.env.FREEKASSA_SECRET_2 ?? '',
+    currency: process.env.FREEKASSA_CURRENCY ?? 'RUB',
+    formUrl: process.env.FREEKASSA_FORM_URL ?? 'https://pay.fk.money/',
+    /** Белый список IP FreeKassa включается только в проде. */
+    checkIp: process.env.FREEKASSA_CHECK_IP === 'true',
+    allowedIps: ['168.119.157.136', '168.119.60.227', '178.154.197.79', '51.250.54.238'] as readonly string[],
+    /** Какие валюты предлагать под выбранный способ оплаты (ID из доков FreeKassa). */
+    currenciesByMethod: {
+      card: '4,8,12',
+      sbp: '13',
+      crypto: '15,24,25,26',
+    } as Record<string, string>,
+  },
 } as const

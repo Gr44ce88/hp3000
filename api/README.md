@@ -74,3 +74,29 @@ api/
 | `GET /api/favorites` | сессия | `{ ids }` избранного |
 | `PUT /api/favorites/:id` | сессия | добавить |
 | `DELETE /api/favorites/:id` | сессия | убрать |
+| `GET /api/stats/districts` | все | плотность по районам |
+| `POST /api/uploads` | сессия | загрузка одного фото, отдаёт `/uploads/<файл>` |
+| `POST /api/payments` | владелец | заявка на публикацию, отдаёт ссылку FreeKassa |
+| `GET /api/payments/:hookerId` | владелец | статус последней заявки |
+| `POST /api/payments/freekassa/notify` | FreeKassa | оповещение об оплате, отвечает `YES` |
+| `POST /api/payments/:id/mock-paid` | владелец, не прод | локальное подтверждение без ключей |
+
+## Фото и услуги
+
+- Фото грузятся по одному через `POST /api/uploads` (multipart, поле `file`, JPEG/PNG/WebP до 2 МБ), файлы складываются в `public/uploads` и отдаются статикой с `/uploads`. В анкете максимум 6 фото.
+- `mainPhoto` — главное фото, оно показывается в каталоге. Если не задано, берётся первое из `photos`.
+- `services` — массив, интерфейс даёт несколько услуг чекбоксами из справочника `SERVICES` (общий с фронтом набор).
+- Каталог фильтруется по услуге: `GET /api/hookers?service=GFE` (сравнение по `any(services)`).
+
+## Оплата публикации
+
+Анкета создаётся **неопубликованной** (`is_published = false`): в каталоге и в статистике её нет, по прямой ссылке её видит только владелец. В каталог её пускает оплата комиссии (`PUBLICATION_FEE`, по умолчанию 490 ₽).
+
+Провайдер — FreeKassa SCI ([документация](https://docs.freekassa.net/)):
+
+- Подпись формы: `md5("m:oa:secret1:currency:order")`, ссылка ведёт на `https://pay.fk.money/`.
+- Подпись оповещения: `md5("MERCHANT_ID:AMOUNT:secret2:MERCHANT_ORDER_ID")`, ответ строго `YES`, иначе FreeKassa повторяет запрос.
+- В кабинете FreeKassa (merchant) URL оповещения — `https://<домен>/api/payments/freekassa/notify`, метод POST, тестовый режим выключить после проверки.
+- `FREEKASSA_CHECK_IP=true` в проде включает белый список IP провайдера.
+
+Переменные: `FREEKASSA_MERCHANT_ID`, `FREEKASSA_SECRET_1`, `FREEKASSA_SECRET_2`, `FREEKASSA_CURRENCY`, `PUBLICATION_FEE`. Без ключей ручка отдаёт `paymentUrl: null` — анкета остаётся неоплаченной, сценарий можно прогнать кнопкой «Подтвердить тестом» (`mock-paid`).

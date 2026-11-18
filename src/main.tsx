@@ -2,7 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppRouter } from '@/app/router'
-import { env } from '@/lib/env'
 import { queryClientConfig } from '@/lib/queryClient'
 import { ensureDemoSession } from '@/features/auth/demo'
 import '@/index.css'
@@ -10,11 +9,7 @@ import '@/index.css'
 const queryClient = new QueryClient(queryClientConfig)
 
 async function bootstrap() {
-  if (env.enableMocks) {
-    const { worker } = await import('@/test/msw/browser')
-    await worker.start({ onUnhandledFrame: 'bypass' })
-  }
-
+  // В dev — демо-сессия через настоящий /api/auth/demo, чтобы смотреть закрытые экраны.
   await ensureDemoSession()
 
   const container = document.getElementById('root')

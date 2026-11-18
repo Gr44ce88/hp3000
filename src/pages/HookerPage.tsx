@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Spinner } from '@/components/ui/Spinner'
-import { MapPlaceholder } from '@/components/widgets/MapPlaceholder'
+import { YandexMap } from '@/components/widgets/YandexMap'
 import { SimilarHookers } from '@/components/widgets/SimilarHookers'
+import { PhotoGallery } from '@/components/widgets/PhotoGallery'
 import { ReviewCard, Stars } from '@/components/widgets/ReviewCard'
 import { createReview, fetchHooker, fetchReviews, type ReviewSort } from '@/features/hookers/api'
 import { useSession } from '@/features/auth/store'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
+import { createPayment, fetchPayment, mockPay, type PaymentMethod } from '@/features/payments/api'
+import { COMMISSION_CURRENCY, PUBLICATION_COMMISSION } from '@/features/hookers/schema'
 import { useHistoryStore } from '@/stores/history'
 import { cn } from '@/lib/cn'
 
@@ -28,6 +31,30 @@ export default function HookerDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const queryClient = useQueryClient()
+  const [publishError, setPublishError] = useState<string | null>(null)
+
+  const pay = useMutation({
+    mutationFn: (method: PaymentMethod) => createPayment(id, method),
+    onSuccess: ({ paymentUrl }) => {
+      if (paymentUrl) window.location.assign(paymentUrl)
+      else setPublishError('Ключи FreeKassa не заданы — оплата недоступна.')
+    },
+    onError: (cause) => setPublishError((cause as Error).message || 'Платёж не открылся'),
+  })
+
+  // Локальная проверка сценария без ключей: подтверждаем оплату напрямую.
+  const testPay = useMutation({
+    mutationFn: async () => {
+      const payment = await fetchPayment(id)
+      if (!payment) throw new Error('Сначала создайте заявку кнопкой оплаты')
+      return mockPay(payment.id)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['hooker', id] })
+      void queryClient.invalidateQueries({ queryKey: ['hookers'] })
+    },
+    onError: (cause) => setPublishError((cause as Error).message || 'Не удалось подтвердить'),
+  })
 
   const hooker = useQuery({
     queryKey: ['hooker', id],
@@ -97,16 +124,43 @@ export default function HookerDetailPage() {
         ← Каталог
       </Link>
 
-      <div className="mt-3 grid gap-6 sm:grid-cols-[minmax(0,240px)_1fr]">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-mat ring-1 ring-hairline">
-          {item.photos[0] ? (
-            <img src={item.photos[0]} alt={item.name} className="size-full object-cover" />
-          ) : (
-            <span className="grid size-full place-items-center text-5xl font-medium text-content-muted/60">
-              {item.name.slice(0, 1)}
-            </span>
-          )}
+      {isOwner && !item.isPublished && (
+        <div className="mt-3 rounded-lg bg-mat p-4 ring-1 ring-dashed ring-hairline">
+          <p className="text-sm font-medium text-content">Анкета не опубликована</p>
+          <p className="mt-1 text-xs text-content-muted">
+            В каталоге её не видно. Оплатите публикацию — {PUBLICATION_COMMISSION}{' '}
+            {COMMISSION_CURRENCY}, и она появится у всех.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(['card', 'sbp', 'crypto'] as const).map((method) => (
+              <Button
+                key={method}
+                size="sm"
+                variant="secondary"
+                disabled={pay.isPending}
+                onClick={() => {
+                  setPublishError(null)
+                  pay.mutate(method)
+                }}
+              >
+                {method === 'card' ? 'Картой' : method === 'sbp' ? 'СБП' : 'Криптой'}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={testPay.isPending}
+              onClick={() => testPay.mutate()}
+            >
+              Подтвердить тестом
+            </Button>
+          </div>
+          {publishError && <p className="mt-2 text-[11px] text-danger">{publishError}</p>}
         </div>
+      )}
+
+      <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <PhotoGallery photos={item.photos} mainPhoto={item.mainPhoto} alt={item.name} />
 
         <div>
           <div className="flex items-start justify-between gap-3">
@@ -190,8 +244,24 @@ export default function HookerDetailPage() {
       </div>
 
       <div className="mt-8 space-y-3">
-        <h2 className="text-[11px] tracking-wide text-content-muted uppercase">Район</h2>
-        <MapPlaceholder address={`${item.city}${item.district ? `, ${item.district}` : ''}`} />
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[11px] tracking-wide text-content-muted uppercase">Район</h2>
+          <a
+            href={`https://yandex.ru/maps/?text=${encodeURIComponent(
+              `${item.city}${item.district ? `, ${item.district}` : ''}`,
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-content-muted underline decoration-hairline underline-offset-2 hover:text-content"
+          >
+            Открыть в Яндексе
+          </a>
+        </div>
+        <YandexMap
+          points={[{ district: item.district, city: item.city, count: 1 }]}
+          hot={1}
+          warm={1}
+        />
       </div>
 
       <section className="mt-8">

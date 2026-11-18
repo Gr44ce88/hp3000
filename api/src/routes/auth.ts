@@ -60,7 +60,11 @@ authRouter.post(
     const user = await one<UserRow>(
       'select id, email, name, phone, avatar_url from users where is_demo order by created_at limit 1',
     )
-    if (!user) throw new Error('Демо-аккаунт не заведён — выполните npm run db:seed')
+    if (!user) {
+      // Пустая база — это не авария: фронт просто остаётся анонимным.
+      res.status(503).json({ message: 'Демо-аккаунт не заведён — выполните npm run db:seed' })
+      return
+    }
     const token = await createSession(user.id)
     res.json({ token, user: publicUser(user) })
   }),

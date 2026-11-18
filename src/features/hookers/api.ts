@@ -5,6 +5,7 @@ function toQuery(params: HookerListParams): string {
   const search = new URLSearchParams()
   if (params.q) search.set('q', params.q)
   if (params.city) search.set('city', params.city)
+  if (params.service) search.set('service', params.service)
   if (params.minPrice) search.set('minPrice', String(params.minPrice))
   if (params.maxPrice) search.set('maxPrice', String(params.maxPrice))
   if (params.sort) search.set('sort', params.sort)
@@ -44,8 +45,12 @@ export type ListingPayload = {
   phone: string
   height: number
   pricePerHour: number
-  services?: string
+  /** Выбранные услуги из справочника SERVICES. */
+  services?: string[]
+  photos?: string[]
+  mainPhoto?: string
   about?: string
+  paymentMethod?: string
 }
 
 export function toListingBody(input: ListingPayload) {
@@ -57,12 +62,19 @@ export function toListingBody(input: ListingPayload) {
     phone: input.phone,
     height: Number(input.height),
     pricePerHour: Number(input.pricePerHour),
-    services: (input.services ?? '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean),
+    services: input.services ?? [],
+    photos: input.photos ?? [],
+    mainPhoto: input.mainPhoto ?? '',
     about: input.about ?? '',
   }
+}
+
+/** Загружает одно фото и отдаёт его URL. */
+export async function uploadPhoto(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await apiClient.post<{ url: string }>('/uploads', form)
+  return data.url
 }
 
 export async function createHooker(input: ListingPayload): Promise<Hooker> {

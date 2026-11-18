@@ -50,6 +50,8 @@ export const listingSchema = z.object({
     .int('Цена целым числом')
     .min(1, 'Цена: целое число больше нуля'),
   services: z.array(z.string().trim().min(1)).max(10).default([]),
+  photos: z.array(z.string().trim().min(1)).max(6, 'Не больше 6 фото').default([]),
+  mainPhoto: z.string().trim().optional(),
   about: z.string().trim().max(255, 'Описание: не больше 255 символов').default(''),
 })
 
@@ -65,6 +67,7 @@ export const reviewSchema = z.object({
 export const listQuerySchema = z.object({
   q: z.string().trim().max(60).optional(),
   city: z.string().trim().optional(),
+  service: z.string().trim().max(60).optional(),
   ids: z.string().optional(),
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
@@ -74,5 +77,10 @@ export const listQuerySchema = z.object({
 })
 
 export const reviewSortSchema = z.enum(['new', 'old', 'best', 'worst']).default('new')
+
+export const paymentSchema = z.object({
+  hookerId: z.string().min(1, 'Не указана анкета'),
+  method: z.enum(['card', 'sbp', 'crypto'], 'Способ оплаты: карта, СБП или крипта'),
+})
 
 export type ListingInput = z.infer<typeof listingSchema>

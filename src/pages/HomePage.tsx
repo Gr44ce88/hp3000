@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { SortFilterBar } from '@/components/widgets/SortFilterBar'
@@ -29,6 +29,7 @@ export default function HomePage() {
   // Всё состояние каталога живёт в адресной строке: переживает перезагрузку и шарится ссылкой.
   const query = params.get('q') ?? ''
   const city = params.get('city') ?? ''
+  const service = params.get('service') ?? ''
   const minPrice = params.get('min') ?? ''
   const maxPrice = params.get('max') ?? ''
   const sortParam = params.get('sort')
@@ -76,13 +77,14 @@ export default function HomePage() {
   const list = useInfiniteQuery({
     queryKey: [
       'hookers',
-      { q: query, city, minPrice, maxPrice: maxPriceEffective, sort, filters, ids: onlyFavorites ? favorites : [] },
+      { q: query, city, service, minPrice, maxPrice: maxPriceEffective, sort, filters, ids: onlyFavorites ? favorites : [] },
     ],
     queryFn: ({ pageParam, signal }) =>
       fetchHookers(
         {
           q: query || undefined,
           city: city || undefined,
+          service: service || undefined,
           minPrice: Number(minPrice) || undefined,
           maxPrice: Number(maxPriceEffective) || undefined,
           sort,
@@ -110,6 +112,16 @@ export default function HomePage() {
   const items = favoritesEmpty ? [] : pages.flatMap((page) => page.items)
   const total = favoritesEmpty ? 0 : (pages[0]?.total ?? 0)
   const showEmpty = items.length === 0 && favoritesReady && (list.isSuccess || favoritesEmpty)
+  // Совсем пустая база: подсказки про фильтры бесполезны, нужен призыв создать анкету.
+  const catalogEmpty =
+    showEmpty &&
+    total === 0 &&
+    !query &&
+    !city &&
+    !service &&
+    !minPrice &&
+    !maxPrice &&
+    filters.length === 0
 
   const toggleFilter = (filter: FilterKey) => {
     const next = filters.includes(filter)
@@ -125,55 +137,68 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="mr-1">
           <h1 className="text-xl font-medium tracking-tight text-content">Анкеты</h1>
           <p className="mt-0.5 text-[11px] text-content-muted tabular-nums" aria-live="polite">
             {list.isSuccess ? `Найдено ${total}` : 'Загружаем каталог'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div role="group" aria-label="Вид карточек" className="flex gap-1 rounded-full bg-chip p-1">
-            {(
-              [
-                ['grid', 'Книжная'],
-                ['list', 'Альбомная'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={mode === value}
-                onClick={() => setMode(value)}
-                className={
-                  mode === value
-                    ? 'h-6 rounded-full bg-surface-elevated px-2.5 text-[11px] font-medium text-content ring-1 ring-hairline'
-                    : 'h-6 rounded-full px-2.5 text-[11px] text-content-muted hover:text-content'
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="secondary" onClick={() => void list.refetch()}>
-            Обновить
-          </Button>
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Имя, район или город"
+          aria-label="Поиск анкет"
+          type="search"
+          className="h-8 min-w-[10rem] flex-1 text-xs sm:text-xs"
+        />
+
+        <div role="group" aria-label="Вид карточек" className="flex gap-1 rounded-full bg-chip p-1">
+          {(
+            [
+              ['grid', 'Книжная'],
+              ['list', 'Альбомная'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={mode === value}
+              aria-label={label}
+              title={label}
+              onClick={() => setMode(value)}
+              className={
+                mode === value
+                  ? 'grid size-6 place-items-center rounded-full bg-surface-elevated text-content ring-1 ring-hairline'
+                  : 'grid size-6 place-items-center rounded-full text-content-muted hover:text-content'
+              }
+            >
+              {value === 'grid' ? (
+                <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true" fill="currentColor">
+                  <rect x="0" y="0" width="6" height="6" rx="1" />
+                  <rect x="8" y="0" width="6" height="6" rx="1" />
+                  <rect x="0" y="8" width="6" height="6" rx="1" />
+                  <rect x="8" y="8" width="6" height="6" rx="1" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true" fill="currentColor">
+                  <rect x="0" y="1" width="14" height="2" rx="1" />
+                  <rect x="0" y="6" width="14" height="2" rx="1" />
+                  <rect x="0" y="11" width="14" height="2" rx="1" />
+                </svg>
+              )}
+            </button>
+          ))}
         </div>
+        <Button size="sm" variant="secondary" onClick={() => void list.refetch()}>
+          Обновить
+        </Button>
       </div>
 
       <div className="mt-3 flex flex-col gap-6 sm:flex-row">
         <aside className="sm:w-56 sm:shrink-0">
           <div className="sticky top-[3.5rem] space-y-3">
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Имя, район или город"
-              aria-label="Поиск анкет"
-              type="search"
-              className="h-8 text-xs sm:text-xs"
-            />
-
             <select
               value={city}
               onChange={(event) => update({ city: event.target.value })}
@@ -214,6 +239,8 @@ export default function HomePage() {
               activeFilters={filters}
               availableFilters={token ? undefined : FILTER_OUTSIDE_AUTH}
               onToggleFilter={toggleFilter}
+              service={service}
+              onServiceChange={(value) => update({ service: value })}
               onReset={resetAll}
             />
 
@@ -244,16 +271,31 @@ export default function HomePage() {
           {showEmpty && (
             <div className="rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
               <p className="text-sm font-medium text-content">
-                {onlyFavorites ? 'В избранном пусто' : 'Под условия ничего не подошло'}
+                {catalogEmpty
+                  ? 'Анкет пока нет'
+                  : onlyFavorites
+                    ? 'В избранном пусто'
+                    : 'Под условия ничего не подошло'}
               </p>
               <p className="mx-auto mt-1 max-w-sm text-xs text-content-muted">
-                {onlyFavorites
-                  ? 'Жмите ♡ на карточке, чтобы сохранить анкету.'
-                  : 'Ослабьте фильтры или измените поиск.'}
+                {catalogEmpty
+                  ? 'База пустая — как после деплоя. Первую анкету добавляет любой авторизованный.'
+                  : onlyFavorites
+                    ? 'Жмите ♡ на карточке, чтобы сохранить анкету.'
+                    : 'Ослабьте фильтры или измените поиск.'}
               </p>
-              <Button variant="secondary" size="sm" className="mt-4" onClick={resetAll}>
-                Сбросить всё
-              </Button>
+              {catalogEmpty ? (
+                <Link
+                  to="/hookers/new"
+                  className="mt-4 inline-flex h-8 items-center rounded-full bg-strong px-3 text-[13px] text-surface hover:bg-content"
+                >
+                  Создать анкету
+                </Link>
+              ) : (
+                <Button variant="secondary" size="sm" className="mt-4" onClick={resetAll}>
+                  Сбросить всё
+                </Button>
+              )}
             </div>
           )}
 
@@ -277,7 +319,7 @@ export default function HomePage() {
                       height={item.height}
                       about={item.about}
                       services={item.services.join(', ')}
-                      photoUrl={item.photos[0]}
+                      photoUrl={item.mainPhoto || item.photos[0]}
                       rating={item.rating}
                       reviewsCount={item.reviewsCount}
                       isNew={item.isNew}

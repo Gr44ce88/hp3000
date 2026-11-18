@@ -11,11 +11,14 @@ import {
   COMMISSION_CURRENCY,
   listingSchema,
   PAYMENT_METHODS,
+  PHOTOS_MAX,
   PUBLICATION_COMMISSION,
+  SERVICES,
   type ListingInput,
   type ListingValues,
   type PaymentMethod,
 } from '@/features/hookers/schema'
+import { uploadPhoto } from '@/features/hookers/api'
 import { cn } from '@/lib/cn'
 
 type Props = {
@@ -42,6 +45,7 @@ export function HookerForm({
     handleSubmit,
     control,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<ListingInput, unknown, ListingValues>({
     resolver: zodResolver(listingSchema),
@@ -51,6 +55,45 @@ export function HookerForm({
 
   const paymentMethod = useWatch({ control, name: 'paymentMethod' })
   const about = useWatch({ control, name: 'about' }) ?? ''
+  const photos = useWatch({ control, name: 'photos' }) ?? []
+  const mainPhoto = useWatch({ control, name: 'mainPhoto' }) ?? ''
+  const services = useWatch({ control, name: 'services' }) ?? []
+  const [uploading, setUploading] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
+  const addFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    const room = PHOTOS_MAX - photos.length
+    if (room <= 0) {
+      setPhotoError(`Больше ${PHOTOS_MAX} фото нельзя`)
+      return
+    }
+
+    setPhotoError(null)
+    setUploading(true)
+    try {
+      const next = [...photos]
+      for (const file of Array.from(files).slice(0, room)) {
+        if (file.size > 2 * 1024 * 1024) {
+          setPhotoError('Файл больше 2 МБ')
+          continue
+        }
+        next.push(await uploadPhoto(file))
+      }
+      setValue('photos', next, { shouldValidate: true })
+      if (!mainPhoto && next[0]) setValue('mainPhoto', next[0])
+    } catch (cause) {
+      setPhotoError((cause as Error).message || 'Не удалось загрузить фото')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removePhoto = (url: string) => {
+    const next = photos.filter((item) => item !== url)
+    setValue('photos', next, { shouldValidate: true })
+    if (mainPhoto === url) setValue('mainPhoto', next[0] ?? '')
+  }
 
   return (
     <form
@@ -128,9 +171,112 @@ export function HookerForm({
         />
       </Field>
 
-      <Field label="Услуги" htmlFor="services" hint="Через запятую" error={errors.services?.message}>
-        <Input id="services" placeholder="Классика, массаж, GFE" {...register('services')} />
-      </Field>
+      <fieldset>
+        <legend className="mb-1.5 block text-[11px] tracking-wide text-content-muted uppercase">
+          Услуги
+        </legend>
+        <div className="flex flex-wrap gap-1.5">
+          {SERVICES.map((option) => {
+            const active = services.includes(option)
+            return (
+              <button
+                key={option}
+                type="button"
+                role="checkbox"
+                aria-checked={active}
+                onClick={() => {
+                  // Текущий список берём из формы: несколько кликов подряд иначе перетирают друг друга.
+                  const current = getValues('services') ?? []
+                  setValue(
+                    'services',
+                    active ? current.filter((item) => item !== option) : [...current, option],
+                    { shouldValidate: true },
+                  )
+                }}
+                className={cn(
+                  'inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs transition-colors',
+                  active
+                    ? 'bg-strong font-medium text-surface'
+                    : 'bg-chip text-content-muted hover:text-content',
+                )}
+              >
+                <span aria-hidden="true" className={cn('text-[10px]', !active && 'opacity-60')}>
+                  {active ? '✓' : '+'}
+                </span>
+                {option}
+              </button>
+            )
+          })}
+        </div>
+        {errors.services && <p className="mt-1 text-[11px] text-danger">{errors.services.message}</p>}
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-1.5 block text-[11px] tracking-wide text-content-muted uppercase">
+          Фото · {photos.length} из {PHOTOS_MAX}
+        </legend>
+
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          {photos.map((url) => {
+            const isMain = mainPhoto === url
+            return (
+              <div key={url} className="relative overflow-hidden rounded-md bg-mat ring-1 ring-hairline">
+                <img src={url} alt="" className="aspect-square w-full object-cover" />
+                <div className="absolute inset-x-1 bottom-1 flex gap-1">
+                  <button
+                    type="button"
+                    aria-pressed={isMain}
+                    onClick={() => setValue('mainPhoto', url)}
+                    className={cn(
+                      'flex-1 rounded-full px-1.5 py-0.5 text-[10px] backdrop-blur',
+                      isMain
+                        ? 'bg-white/90 font-medium text-slate-900'
+                        : 'bg-black/45 text-white hover:bg-black/65',
+                    )}
+                  >
+                    {isMain ? 'главное' : 'сделать главным'}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Удалить фото"
+                    onClick={() => removePhoto(url)}
+                    className="rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white backdrop-blur hover:bg-black/65"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+
+          {photos.length < PHOTOS_MAX && (
+            <label
+              className={cn(
+                'grid aspect-square cursor-pointer place-items-center rounded-md bg-surface text-[11px] text-content-muted ring-1 ring-dashed ring-hairline hover:text-content',
+                uploading && 'opacity-60',
+              )}
+            >
+              <span>{uploading ? 'Загружаем…' : '+ фото'}</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={(event) => {
+                  void addFiles(event.target.files)
+                  event.target.value = ''
+                }}
+              />
+            </label>
+          )}
+        </div>
+
+        <p className="mt-1 text-[11px] text-content-muted">
+          До {PHOTOS_MAX} файлов, JPEG/PNG/WebP, каждый до 2 МБ. Главное фото показывается в каталоге.
+        </p>
+        {photoError && <p className="mt-1 text-[11px] text-danger">{photoError}</p>}
+      </fieldset>
 
       <Field
         label="Описание"

@@ -14,7 +14,9 @@ export type HookerView = {
   rating: number
   reviewsCount: number
   photos: string[]
+  mainPhoto: string
   isNew: boolean
+  isPublished: boolean
   createdAt: string
   ownerId: string | null
 }
@@ -33,7 +35,9 @@ export type HookerRow = {
   services: string[]
   about: string
   photos: string[]
+  main_photo: string
   is_new: boolean
+  is_published: boolean
   created_at: Date
   owner_id: string | null
   reviews_count: string | number
@@ -43,7 +47,7 @@ export type HookerRow = {
 /** Колонки с агрегатами: рейтинг и число отзывов считаются по таблице reviews. */
 export const HOOKER_COLUMNS = `
   h.id, h.name, h.age, h.city, h.district, h.region, h.phone, h.height,
-  h.price_per_hour, h.services, h.about, h.photos, h.is_new, h.created_at, h.owner_id,
+  h.price_per_hour, h.services, h.about, h.photos, h.main_photo, h.is_new, h.is_published, h.created_at, h.owner_id,
   coalesce(r.reviews_count, 0) as reviews_count,
   r.rating
 `
@@ -71,7 +75,9 @@ export const toView = (row: HookerRow): HookerView => ({
   rating: row.rating === null ? 0 : Number(row.rating),
   reviewsCount: Number(row.reviews_count),
   photos: row.photos,
+  mainPhoto: row.main_photo,
   isNew: row.is_new,
+  isPublished: row.is_published,
   createdAt: new Date(row.created_at).toISOString(),
   ownerId: row.owner_id,
 })

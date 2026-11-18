@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { HookerCard } from '@/components/widgets/HookerCard'
-import { MapPlaceholder } from '@/components/widgets/MapPlaceholder'
+import { YandexMap } from '@/components/widgets/YandexMap'
 import { ProfileChip } from '@/components/widgets/ProfileChip'
 import { ReviewCard } from '@/components/widgets/ReviewCard'
 import { SortFilterBar } from '@/components/widgets/SortFilterBar'
@@ -74,8 +74,13 @@ export default function WidgetsPage() {
         </div>
       </Section>
 
-      <Section title="Карта" hint="Пока картинка-заглушка">
-        <MapPlaceholder address="Москва, Пресненская наб., 12" className="max-w-2xl" />
+      <Section title="Карта" hint="Яндекс.Карты, реальный компонент">
+        <YandexMap
+          points={[{ district: 'Пресня', city: 'Москва', count: 3 }]}
+          hot={3}
+          warm={2}
+          className="max-w-2xl"
+        />
       </Section>
 
       <Section title="Сортировка и фильтры" hint="Кнопки, состояние локальное">
