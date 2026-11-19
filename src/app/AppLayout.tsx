@@ -36,7 +36,7 @@ export function AppLayout() {
 
   useEffect(() => {
     const title = titleFor(pathname)
-    document.title = title ? `${title} · HookersPro3000` : 'Страница не найдена · HookersPro3000'
+    document.title = title ? `${title} · hp3k` : 'Страница не найдена · hp3k'
     mainRef.current?.focus()
   }, [pathname])
 
@@ -59,7 +59,7 @@ export function AppLayout() {
               <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
                 <Sparkles className="size-3.5" aria-hidden="true" />
               </span>
-              <span className="text-[13px]">HookersPro3000</span>
+              <span className="text-[13px]">hp3k</span>
             </NavLink>
 
             <nav className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
@@ -167,7 +167,7 @@ export function AppLayout() {
             )}
           </Link>
         </nav>
-        <p className="mt-3 text-center text-[11px] text-content-muted">HookersPro3000 · {YEAR}</p>
+        <p className="mt-3 text-center text-[11px] text-content-muted">hp3k · {YEAR}</p>
       </footer>
     </div>
   )

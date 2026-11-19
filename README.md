@@ -1,4 +1,4 @@
-# HookersPro3000
+# hp3k
 
 SPA-приложение на React. Каркас: Vite + TypeScript, роутинг, server-state, локальный стор, формы, темы, тесты.
 
