@@ -100,7 +100,7 @@ fi
 
 expect 204 "$(call DELETE "/hookers/$ID" '' "$TOKEN")" 'удаление анкеты'
 expect 404 "$(call GET "/hookers/$ID")" 'удалённая анкета не находится'
-expect 404 "$(call GET /мусор)" 'неизвестная ручка'
+expect 404 "$(call GET /%D0%BC%D1%83%D1%81%D0%BE%D1%80)" 'неизвестная ручка'
 
 # ——— оплата публикации (FreeKassa, тестовые ключи из .env) ———
 expect 201 "$(call POST /hookers '{"name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'

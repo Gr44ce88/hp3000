@@ -94,6 +94,19 @@ npm run dev:api      # :8080
 
 Публикация анкеты платная: анкета создаётся скрытой и попадает в каталог только после оплаты комиссии через FreeKassa (`api/README.md`, раздел «Оплата публикации»).
 
+## Деплой
+
+Сервер: Ubuntu 22.04, приложение в `/srv/hp3000`, systemd-юнит `hp3k-api` (автозапуск, рестарт при падении), nginx проксирует `/api` на `127.0.0.1:8080` и отдаёт `dist`. Порядок:
+
+```bash
+tar -czf - --exclude=node_modules --exclude=.git --exclude=dist --exclude=.env --exclude=public/uploads . \
+  | ssh -i ~/.ssh/hp3000_ed25519 -p 1270 futile@104.143.218.6 'tar -xzf - -C /srv/hp3000'
+ssh hp3000 'cd /srv/hp3000 && npm ci && npm run db:migrate && npm run build && sudo systemctl restart hp3k-api'
+ssh hp3000 'bash /srv/hp3000/scripts/api-smoke.sh http://127.0.0.1:8080/api'
+```
+
+Перед первым боевым деплоем нужен `pg_dump`, HTTPS — после появления домена (`certbot --nginx`).
+
 ## Карты
 
 Тепловая карта (`/heatmap`) — Яндекс.Карты JS API 2.1: пятна рисуются по районам из `/api/stats/districts`, размер и цвет зависят от плотности, клик по пятну открывает каталог с фильтром по району.
