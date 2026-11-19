@@ -249,6 +249,11 @@ hookersRouter.post(
     const input = parseBody(reviewSchema, req.body)
     const author = currentUser(req)
 
+    // Свою анкету владелец отзывом не оценивает: рейтинг — мнение клиентов.
+    if (hooker.owner_id === author.id) {
+      throw conflict('Свою анкету оценить отзывом нельзя')
+    }
+
     let review: ReviewRow
     try {
       const rows = await query<ReviewRow>(

@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { ArrowLeft, LogIn, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Field } from '@/components/ui/Textarea'
 import { Input } from '@/components/ui/Input'
@@ -34,7 +35,12 @@ export default function AuthPage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-xl font-medium tracking-tight text-content">
+      <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
+        {mode === 'login' ? (
+          <LogIn className="size-5 text-brand-600" aria-hidden="true" />
+        ) : (
+          <UserPlus className="size-5 text-brand-600" aria-hidden="true" />
+        )}
         {mode === 'login' ? 'Вход' : 'Регистрация'}
       </h1>
       <p className="mt-1 text-xs text-content-muted">
@@ -77,8 +83,12 @@ export default function AuthPage() {
         )}
       </div>
 
-      <Link to="/" className="mt-6 inline-block text-[11px] text-content-muted hover:text-content">
-        ← На главную
+      <Link
+        to="/"
+        className="mt-6 inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
+      >
+        <ArrowLeft className="size-3" aria-hidden="true" />
+        На главную
       </Link>
     </div>
   )
@@ -122,6 +132,7 @@ function LoginForm({ onDone, onError }: { onDone: DoneHandler; onError: (message
         />
       </Field>
       <Button type="submit" className="w-full" isLoading={signIn.isPending}>
+        <LogIn className="size-4" aria-hidden="true" />
         Войти
       </Button>
     </form>
@@ -157,6 +168,7 @@ function RegisterForm({ onDone, onError }: { onDone: DoneHandler; onError: (mess
         <Input id="register-confirm" type="password" autoComplete="new-password" placeholder="••••••••" invalid={Boolean(errors.confirm)} {...register('confirm')} />
       </Field>
       <Button type="submit" className="w-full" isLoading={signUp.isPending}>
+        <UserPlus className="size-4" aria-hidden="true" />
         Зарегистрироваться
       </Button>
     </form>

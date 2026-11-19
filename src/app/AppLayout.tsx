@@ -1,5 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Flame,
+  Heart,
+  LayoutGrid,
+  LogIn,
+  Moon,
+  Plus,
+  Sparkles,
+  Sun,
+  UserRound,
+} from 'lucide-react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/hooks/useTheme'
@@ -11,8 +22,8 @@ import { titleFor } from '@/app/titles'
 const YEAR = new Date().getFullYear()
 
 const navItems = [
-  { to: '/', label: 'Анкеты', end: true },
-  { to: '/heatmap', label: 'Тепловая карта' },
+  { to: '/', label: 'Анкеты', icon: LayoutGrid, end: true },
+  { to: '/heatmap', label: 'Тепловая карта', icon: Flame },
 ] as const
 
 export function AppLayout() {
@@ -45,8 +56,8 @@ export function AppLayout() {
               to="/"
               className="flex shrink-0 items-center gap-2 font-semibold text-content"
             >
-              <span className="grid size-6 place-items-center rounded-md bg-strong text-[11px] font-semibold text-surface">
-                H
+              <span className="grid size-6 place-items-center rounded-md bg-crimson text-surface">
+                <Sparkles className="size-3.5" aria-hidden="true" />
               </span>
               <span className="text-[13px]">HookersPro3000</span>
             </NavLink>
@@ -59,11 +70,12 @@ export function AppLayout() {
                   end={'end' in item ? item.end : undefined}
                   className={({ isActive }) =>
                     cn(
-                      'shrink-0 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
+                      'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
                       isActive && 'bg-chip font-medium text-content hover:text-content',
                     )
                   }
                 >
+                  <item.icon className="size-3.5" aria-hidden="true" />
                   {item.label}
                 </NavLink>
               ))}
@@ -76,14 +88,16 @@ export function AppLayout() {
               size="sm"
               onClick={toggle}
               aria-label={isDark ? 'Включить светлую тему' : 'Включить тёмную тему'}
+              title={isDark ? 'Светлая тема' : 'Тёмная тема'}
             >
-              {isDark ? '☀' : '☾'}
+              {isDark ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
             </Button>
 
             <Link
               to="/hookers/new"
-              className="inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium whitespace-nowrap text-surface transition-opacity hover:opacity-90"
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium whitespace-nowrap text-cream transition-opacity hover:opacity-90"
             >
+              <Plus className="size-3.5" aria-hidden="true" />
               Создать анкету
             </Link>
 
@@ -120,20 +134,37 @@ export function AppLayout() {
           aria-label="Нижняя навигация"
           className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-content-muted"
         >
-          <Link to="/" className="hover:text-content">
+          <Link to="/" className="inline-flex items-center gap-1 hover:text-content">
+            <LayoutGrid className="size-3" aria-hidden="true" />
             Анкеты
           </Link>
-          <Link to="/heatmap" className="hover:text-content">
+          <Link to="/heatmap" className="inline-flex items-center gap-1 hover:text-content">
+            <Flame className="size-3" aria-hidden="true" />
             Тепловая карта
           </Link>
-          <Link to="/favorites" className="hover:text-content">
+          <Link to="/favorites" className="inline-flex items-center gap-1 hover:text-content">
+            <Heart className="size-3" aria-hidden="true" />
             Избранное
           </Link>
-          <Link to="/hookers/new" className="hover:text-content">
+          <Link to="/hookers/new" className="inline-flex items-center gap-1 hover:text-content">
+            <Plus className="size-3" aria-hidden="true" />
             Создать анкету
           </Link>
-          <Link to={user ? '/profile' : '/auth'} className="hover:text-content">
-            {user ? 'Мой профиль' : 'Войти'}
+          <Link
+            to={user ? '/profile' : '/auth'}
+            className="inline-flex items-center gap-1 hover:text-content"
+          >
+            {user ? (
+              <>
+                <UserRound className="size-3" aria-hidden="true" />
+                Мой профиль
+              </>
+            ) : (
+              <>
+                <LogIn className="size-3" aria-hidden="true" />
+                Войти
+              </>
+            )}
           </Link>
         </nav>
         <p className="mt-3 text-center text-[11px] text-content-muted">HookersPro3000 · {YEAR}</p>

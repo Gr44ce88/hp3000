@@ -1,5 +1,6 @@
 import { useId, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronDown, Heart, LogIn, LogOut, Pencil, UserRound } from 'lucide-react'
 import { useProfileMenuStore } from '@/stores/profileMenu'
 import { cn } from '@/lib/cn'
 
@@ -118,9 +119,9 @@ export function ProfileChip({
         <span className="max-w-32 truncate text-xs">{label}</span>
         <span
           aria-hidden="true"
-          className={cn('text-xs text-content-muted transition-transform', open && 'rotate-180')}
+          className={cn('text-content-muted transition-transform', open && 'rotate-180')}
         >
-          ▾
+          <ChevronDown className="size-3.5" />
         </span>
       </button>
 
@@ -142,8 +143,9 @@ export function ProfileChip({
             <Link
               role="menuitem"
               to="/auth"
-              className="mt-3 flex h-7 items-center justify-center rounded-full bg-strong text-xs font-medium text-surface transition-opacity hover:opacity-90"
+              className="mt-3 flex h-7 items-center justify-center gap-1.5 rounded-full bg-crimson text-xs font-medium text-cream transition-opacity hover:opacity-90"
             >
+              <LogIn className="size-3" aria-hidden="true" />
               Войти
             </Link>
           </div>
@@ -171,15 +173,20 @@ export function ProfileChip({
 
         {variant === 'own' && (
           <div className="space-y-0.5">
-            <MenuItem to="/profile/edit">Редактировать</MenuItem>
-            <MenuItem to="/favorites">Избранное</MenuItem>
+            <MenuItem to="/profile/edit" icon={Pencil}>
+              Редактировать
+            </MenuItem>
+            <MenuItem to="/favorites" icon={Heart}>
+              Избранное
+            </MenuItem>
             {onLogout && (
               <button
                 role="menuitem"
                 type="button"
                 onClick={onLogout}
-                className="flex h-7 w-full items-center rounded-md px-2 text-xs text-content transition-colors hover:bg-chip"
+                className="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs text-content transition-colors hover:bg-chip"
               >
+                <LogOut className="size-3" aria-hidden="true" />
                 Выйти
               </button>
             )}
@@ -190,13 +197,22 @@ export function ProfileChip({
   )
 }
 
-function MenuItem({ to, children }: { to: string; children: string }) {
+function MenuItem({
+  to,
+  icon: Icon,
+  children,
+}: {
+  to: string
+  icon: typeof Pencil
+  children: string
+}) {
   return (
     <Link
       role="menuitem"
       to={to}
-      className="flex h-7 items-center rounded-md px-2 text-xs text-content transition-colors hover:bg-chip"
+      className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-content transition-colors hover:bg-chip"
     >
+      <Icon className="size-3" aria-hidden="true" />
       {children}
     </Link>
   )
@@ -215,9 +231,9 @@ function Avatar({
     return (
       <span
         aria-hidden="true"
-        className="grid size-6 place-items-center rounded-full ring-1 ring-dashed ring-hairline text-[11px] text-content-muted"
+        className="grid size-6 place-items-center rounded-full ring-1 ring-dashed ring-hairline text-content-muted"
       >
-        ?
+        <UserRound className="size-3" />
       </span>
     )
   }

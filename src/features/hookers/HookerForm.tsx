@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { Camera, Check, Loader2, Plus, Save, Star, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Input } from '@/components/ui/Input'
@@ -200,8 +201,8 @@ export function HookerForm({
                     : 'bg-chip text-content-muted hover:text-content',
                 )}
               >
-                <span aria-hidden="true" className={cn('text-[10px]', !active && 'opacity-60')}>
-                  {active ? '✓' : '+'}
+                <span aria-hidden="true" className={cn('shrink-0', !active && 'opacity-60')}>
+                  {active ? <Check className="size-3" /> : <Plus className="size-3" />}
                 </span>
                 {option}
               </button>
@@ -226,23 +227,31 @@ export function HookerForm({
                   <button
                     type="button"
                     aria-pressed={isMain}
+                    aria-label={isMain ? 'Главное фото' : 'Сделать главным'}
                     onClick={() => setValue('mainPhoto', url)}
                     className={cn(
-                      'flex-1 rounded-full px-1.5 py-0.5 text-[10px] backdrop-blur',
+                      'flex flex-1 items-center justify-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] backdrop-blur',
                       isMain
                         ? 'bg-white/90 font-medium text-slate-900'
                         : 'bg-black/45 text-white hover:bg-black/65',
                     )}
                   >
-                    {isMain ? 'главное' : 'сделать главным'}
+                    {isMain ? (
+                      <>
+                        <Star className="size-2.5 fill-current" aria-hidden="true" />
+                        главное
+                      </>
+                    ) : (
+                      'сделать главным'
+                    )}
                   </button>
                   <button
                     type="button"
                     aria-label="Удалить фото"
                     onClick={() => removePhoto(url)}
-                    className="rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white backdrop-blur hover:bg-black/65"
+                    className="grid place-items-center rounded-full bg-black/45 px-1.5 py-0.5 text-white backdrop-blur hover:bg-black/65"
                   >
-                    ✕
+                    <X className="size-2.5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -256,7 +265,14 @@ export function HookerForm({
                 uploading && 'opacity-60',
               )}
             >
-              <span>{uploading ? 'Загружаем…' : '+ фото'}</span>
+              <span className="flex flex-col items-center gap-1">
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Camera className="size-4" aria-hidden="true" />
+                )}
+                {uploading ? 'Загружаем…' : 'фото'}
+              </span>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -340,12 +356,14 @@ export function HookerForm({
 
       <div className="flex gap-2">
         <Button type="submit" isLoading={pending}>
+          <Save className="size-4" aria-hidden="true" />
           {submitLabel}
         </Button>
         <Link
           to="/hookers"
-          className="inline-flex h-8 items-center rounded-full px-3 text-[13px] text-content-muted hover:text-content"
+          className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[13px] text-content-muted hover:text-content"
         >
+          <X className="size-3.5" aria-hidden="true" />
           Отмена
         </Link>
       </div>

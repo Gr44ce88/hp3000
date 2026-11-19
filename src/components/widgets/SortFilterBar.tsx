@@ -1,3 +1,4 @@
+import { ArrowUpDown, RotateCcw, SlidersHorizontal, Tags } from 'lucide-react'
 import type { FilterKey, SortKey } from '@/features/hookers/sorting'
 import { FILTER_OPTIONS, SORT_OPTIONS } from '@/features/hookers/sorting'
 import { SERVICES } from '@/features/hookers/schema'
@@ -43,7 +44,8 @@ export function SortFilterBar({
 
   return (
     <div className={cn(vertical ? 'space-y-4' : 'flex flex-wrap items-center gap-x-3 gap-y-2', className)}>
-      <span id="sort-label" className="block text-[11px] tracking-wide text-content-muted uppercase">
+      <span id="sort-label" className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+        <ArrowUpDown className="size-3" aria-hidden="true" />
         Сортировка
       </span>
       <div role="group" aria-labelledby="sort-label" className={cn('flex gap-1.5', vertical ? 'flex-col items-start' : 'flex-wrap')}>
@@ -61,7 +63,10 @@ export function SortFilterBar({
       </div>
 
       {!vertical && <span aria-hidden="true" className="mx-1 hidden h-4 w-px bg-hairline sm:block" />}
-      <span className="block text-[11px] tracking-wide text-content-muted uppercase">Фильтры</span>
+      <span className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+        <SlidersHorizontal className="size-3" aria-hidden="true" />
+        Фильтры
+      </span>
       <div className={cn('flex gap-1.5', vertical ? 'flex-col items-start' : 'flex-wrap')}>
         {FILTER_OPTIONS.filter(
           (option) => !availableFilters || availableFilters.includes(option.value),
@@ -83,7 +88,8 @@ export function SortFilterBar({
 
       {onServiceChange && (
         <>
-          <span className="block text-[11px] tracking-wide text-content-muted uppercase">
+          <span className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+            <Tags className="size-3" aria-hidden="true" />
             Услуга
           </span>
           <div
@@ -113,8 +119,9 @@ export function SortFilterBar({
         <button
           type="button"
           onClick={onReset}
-          className="text-[11px] text-content-muted underline underline-offset-2 hover:text-content"
+          className="flex items-center gap-1 text-[11px] text-content-muted underline underline-offset-2 hover:text-content"
         >
+          <RotateCcw className="size-3" aria-hidden="true" />
           Сбросить
         </button>
       )}

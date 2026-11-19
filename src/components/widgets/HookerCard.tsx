@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Heart, MapPin, Ruler, Star } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 export type HookerCardProps = {
@@ -71,10 +72,11 @@ export function HookerCard({
       )}
 
       {rating !== undefined && (
-        <span className="absolute top-1.5 left-1.5 inline-flex h-5 items-center rounded-full bg-black/45 px-1.5 text-[11px] font-medium text-white tabular-nums backdrop-blur">
-          ★ {rating.toFixed(1)}
+        <span className="absolute top-1.5 left-1.5 inline-flex h-5 items-center gap-1 rounded-full bg-black/45 px-1.5 text-[11px] font-medium text-white tabular-nums backdrop-blur">
+          <Star className="size-3 fill-peach text-peach" aria-hidden="true" />
+          {rating.toFixed(1)}
           {reviewsCount !== undefined && (
-            <span className="ml-1.5 border-l border-white/30 pl-1.5 font-normal text-white/80 tabular-nums">
+            <span className="border-l border-white/30 pl-1.5 font-normal text-white/80 tabular-nums">
               {reviewsCount}
             </span>
           )}
@@ -90,7 +92,11 @@ export function HookerCard({
           aria-label={isFavorite ? `Убрать из избранного: ${name}` : `В избранное: ${name}`}
           className="absolute top-1.5 right-1.5 z-10 grid size-6 place-items-center rounded-full bg-black/45 text-[11px] text-white backdrop-blur transition-colors hover:bg-black/65"
         >
-          {isFavorite ? '♥' : '♡'}
+          {isFavorite ? (
+            <Heart className="size-3.5 fill-brand-500 text-brand-500" aria-hidden="true" />
+          ) : (
+            <Heart className="size-3.5" aria-hidden="true" />
+          )}
         </button>
       )}
 
@@ -109,9 +115,16 @@ export function HookerCard({
         <span className="shrink-0 text-[11px] text-content-muted tabular-nums">{age}</span>
       </div>
 
-      <p className="truncate text-[11px] text-content-muted">
+      <p className="flex items-center gap-1 truncate text-[11px] text-content-muted">
+        <MapPin className="size-3 shrink-0 text-content-muted/70" aria-hidden="true" />
         {city}
-        {height !== undefined && ` · ${height} см`}
+        {height !== undefined && (
+          <span className="inline-flex items-center gap-0.5">
+            <span aria-hidden="true">·</span>
+            <Ruler className="size-3 text-content-muted/70" aria-hidden="true" />
+            {height} см
+          </span>
+        )}
       </p>
 
       {about && (

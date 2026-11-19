@@ -1,6 +1,19 @@
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import {
+  ArrowLeft,
+  Check,
+  Coins,
+  Copy,
+  CreditCard,
+  Heart,
+  MapPin,
+  Pencil,
+  Phone,
+  Send,
+  Star,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Spinner } from '@/components/ui/Spinner'
@@ -120,8 +133,12 @@ export default function HookerDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Link to="/" className="text-[11px] text-content-muted hover:text-content">
-        ← Каталог
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
+      >
+        <ArrowLeft className="size-3" aria-hidden="true" />
+        Каталог
       </Link>
 
       {isOwner && !item.isPublished && (
@@ -132,26 +149,31 @@ export default function HookerDetailPage() {
             {COMMISSION_CURRENCY}, и она появится у всех.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(['card', 'sbp', 'crypto'] as const).map((method) => (
-              <Button
-                key={method}
-                size="sm"
-                variant="secondary"
-                disabled={pay.isPending}
-                onClick={() => {
-                  setPublishError(null)
-                  pay.mutate(method)
-                }}
-              >
-                {method === 'card' ? 'Картой' : method === 'sbp' ? 'СБП' : 'Криптой'}
-              </Button>
-            ))}
+            {(['card', 'sbp', 'crypto'] as const).map((method) => {
+              const Icon = method === 'card' ? CreditCard : method === 'sbp' ? Send : Coins
+              return (
+                <Button
+                  key={method}
+                  size="sm"
+                  variant="secondary"
+                  disabled={pay.isPending}
+                  onClick={() => {
+                    setPublishError(null)
+                    pay.mutate(method)
+                  }}
+                >
+                  <Icon className="size-3.5" aria-hidden="true" />
+                  {method === 'card' ? 'Картой' : method === 'sbp' ? 'СБП' : 'Криптой'}
+                </Button>
+              )
+            })}
             <Button
               size="sm"
               variant="ghost"
               disabled={testPay.isPending}
               onClick={() => testPay.mutate()}
             >
+              <Check className="size-3.5" aria-hidden="true" />
               Подтвердить тестом
             </Button>
           </div>
@@ -168,7 +190,8 @@ export default function HookerDetailPage() {
               <h1 className="text-xl font-medium tracking-tight text-content">
                 {item.name}, {item.age}
               </h1>
-              <p className="mt-0.5 text-xs text-content-muted">
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-content-muted">
+                <MapPin className="size-3" aria-hidden="true" />
                 {item.city}
                 {item.district && ` · ${item.district}`} · {item.height} см
               </p>
@@ -179,8 +202,12 @@ export default function HookerDetailPage() {
               aria-pressed={favorite}
               className="grid size-8 shrink-0 place-items-center rounded-full bg-chip text-sm transition-colors hover:bg-content/10"
               aria-label={favorite ? 'Убрать из избранного' : 'В избранное'}
+              title={favorite ? 'Убрать из избранного' : 'В избранное'}
             >
-              {favorite ? '♥' : '♡'}
+              <Heart
+                className={cn('size-4', favorite && 'fill-brand-500 text-brand-500')}
+                aria-hidden="true"
+              />
             </button>
           </div>
 
@@ -211,8 +238,9 @@ export default function HookerDetailPage() {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <a
               href={`tel:${item.phone.replace(/[^+\d]/g, '')}`}
-              className="inline-flex h-8 items-center rounded-full bg-strong px-3 text-[13px] font-medium text-surface tabular-nums hover:opacity-90"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-strong px-3 text-[13px] font-medium text-surface tabular-nums hover:opacity-90"
             >
+              <Phone className="size-3.5" aria-hidden="true" />
               {item.phone}
             </a>
             <button
@@ -226,16 +254,18 @@ export default function HookerDetailPage() {
                   })
                   .catch(() => setCopied(false))
               }}
-              className="inline-flex h-8 items-center rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
               aria-label="Скопировать телефон"
             >
+              {copied ? <Check className="size-3.5" aria-hidden="true" /> : <Copy className="size-3.5" aria-hidden="true" />}
               {copied ? 'скопировано' : 'копировать'}
             </button>
             {isOwner && (
               <Link
                 to={`/hookers/${item.id}/edit`}
-                className="inline-flex h-8 items-center rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-chip px-3 text-[13px] text-content hover:bg-content/10"
               >
+                <Pencil className="size-3.5" aria-hidden="true" />
                 Редактировать
               </Link>
             )}
@@ -296,7 +326,11 @@ export default function HookerDetailPage() {
           </div>
         </div>
 
-        {token && !hasReviewed ? (
+        {isOwner ? (
+          <p className="mt-3 rounded-lg bg-mat p-4 text-xs text-content-muted">
+            Это ваша анкета — отзыв оставляют клиенты, поэтому оценивать себя нельзя.
+          </p>
+        ) : token && !hasReviewed ? (
           <form
             className="mt-3 space-y-2 rounded-lg bg-surface-elevated p-4 ring-1 ring-hairline"
             onSubmit={(event) => {
@@ -318,9 +352,9 @@ export default function HookerDetailPage() {
                     aria-checked={rating === value}
                     aria-label={`${value} из 5`}
                     onClick={() => setRating(value)}
-                    className={cn('text-base leading-none', value <= rating ? 'text-rating' : 'text-line')}
+                    className={cn('leading-none', value <= rating ? 'text-rating' : 'text-line')}
                   >
-                    ★
+                    <Star className={cn('size-5', value <= rating && 'fill-rating')} aria-hidden="true" />
                   </button>
                 ))}
               </div>
@@ -336,6 +370,7 @@ export default function HookerDetailPage() {
               />
             </Field>
             <Button type="submit" size="sm" isLoading={addReview.isPending}>
+              <Send className="size-3.5" aria-hidden="true" />
               Отправить отзыв
             </Button>
           </form>

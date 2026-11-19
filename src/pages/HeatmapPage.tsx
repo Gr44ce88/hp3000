@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { Flame, MapPinOff } from 'lucide-react'
 import { YandexMap } from '@/components/widgets/YandexMap'
 import { Spinner } from '@/components/ui/Spinner'
 import { fetchDistrictStats } from '@/features/hookers/api'
@@ -26,7 +27,10 @@ export default function HeatmapPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-xl font-medium tracking-tight text-content">Тепловая карта</h1>
+      <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
+        <Flame className="size-5 text-brand-600" aria-hidden="true" />
+        Тепловая карта
+      </h1>
       <p className="mt-0.5 text-[11px] text-content-muted">
         Плотность анкет по районам на Яндекс.Картах. Клик по пятну открывает анкеты этого района.
       </p>
@@ -75,7 +79,10 @@ export default function HeatmapPage() {
             Районы по плотности{busiest ? ` · максимум: ${busiest.district}` : ''}
           </p>
           {items.length === 0 ? (
-            <p className="mt-2 text-xs text-content-muted">Пока ни одной анкеты с районом.</p>
+            <p className="mt-2 flex items-center gap-2 rounded-lg bg-mat p-4 text-xs text-content-muted ring-1 ring-dashed ring-hairline">
+              <MapPinOff className="size-4 shrink-0" aria-hidden="true" />
+              Пока ни одной анкеты с районом.
+            </p>
           ) : (
             <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {items.map((item) => (

@@ -60,11 +60,17 @@ expect 200 "$(call PATCH "/hookers/$ID" '{"pricePerHour":3200}' "$TOKEN")" 'пр
 expect 200 "$(call GET /me/hookers '' "$TOKEN")" 'мои анкеты'
 expect 200 "$(call GET /me/history '' "$TOKEN")" 'история просмотров'
 
-expect 422 "$(call POST "/hookers/$ID/reviews" '{"rating":9,"text":"коротко"}' "$TOKEN")" 'валидация отзыва'
-expect 201 "$(call POST "/hookers/$ID/reviews" '{"rating":5,"text":"Отличная анкета, всё по описанию"}' "$TOKEN")" 'создание отзыва'
-expect 409 "$(call POST "/hookers/$ID/reviews" '{"rating":4,"text":"Второй отзыв от того же автора"}' "$TOKEN")" 'дубль отзыва'
+# второй аккаунт: отзывы пишет гость, а не владелец
+EMAIL2="smoke2-$(date +%s)@test.local"
+expect 201 "$(call POST /auth/register "{\"email\":\"$EMAIL2\",\"password\":\"smoke12345\",\"name\":\"Гость\"}")" 'регистрация гостя'
+TOKEN2="$(json .token)"
+
+expect 422 "$(call POST "/hookers/$ID/reviews" '{"rating":9,"text":"коротко"}' "$TOKEN2")" 'валидация отзыва'
+expect 409 "$(call POST "/hookers/$ID/reviews" '{"rating":5,"text":"Отзыв владельца на свою же анкету"}' "$TOKEN")" 'свою анкету не оценить'
+expect 201 "$(call POST "/hookers/$ID/reviews" '{"rating":5,"text":"Отличная анкета, всё по описанию"}' "$TOKEN2")" 'создание отзыва'
+expect 409 "$(call POST "/hookers/$ID/reviews" '{"rating":4,"text":"Второй отзыв от того же автора"}' "$TOKEN2")" 'дубль отзыва'
 expect 200 "$(call GET "/hookers/$ID/reviews?sort=best")" 'список отзывов'
-expect 200 "$(call GET /me/reviews '' "$TOKEN")" 'мои отзывы'
+expect 200 "$(call GET /me/reviews '' "$TOKEN2")" 'мои отзывы'
 expect 200 "$(call GET /stats/districts)" 'плотность по районам'
 
 # ——— фото и услуги ———

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
+import {
+  FilePlus2,
+  Heart,
+  LayoutGrid,
+  RefreshCw,
+  RotateCcw,
+  Rows3,
+  Search,
+  SearchX,
+} from 'lucide-react'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { SortFilterBar } from '@/components/widgets/SortFilterBar'
@@ -145,14 +155,20 @@ export default function HomePage() {
           </p>
         </div>
 
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Имя, район или город"
-          aria-label="Поиск анкет"
-          type="search"
-          className="h-8 min-w-[10rem] flex-1 text-xs sm:text-xs"
-        />
+        <div className="relative min-w-[10rem] flex-1">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-content-muted"
+            aria-hidden="true"
+          />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Имя, район или город"
+            aria-label="Поиск анкет"
+            type="search"
+            className="h-8 w-full pl-8 text-xs sm:text-xs"
+          />
+        </div>
 
         <div role="group" aria-label="Вид карточек" className="flex gap-1 rounded-full bg-chip p-1">
           {(
@@ -175,23 +191,15 @@ export default function HomePage() {
               }
             >
               {value === 'grid' ? (
-                <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true" fill="currentColor">
-                  <rect x="0" y="0" width="6" height="6" rx="1" />
-                  <rect x="8" y="0" width="6" height="6" rx="1" />
-                  <rect x="0" y="8" width="6" height="6" rx="1" />
-                  <rect x="8" y="8" width="6" height="6" rx="1" />
-                </svg>
+                <LayoutGrid className="size-3.5" aria-hidden="true" />
               ) : (
-                <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden="true" fill="currentColor">
-                  <rect x="0" y="1" width="14" height="2" rx="1" />
-                  <rect x="0" y="6" width="14" height="2" rx="1" />
-                  <rect x="0" y="11" width="14" height="2" rx="1" />
-                </svg>
+                <Rows3 className="size-3.5" aria-hidden="true" />
               )}
             </button>
           ))}
         </div>
         <Button size="sm" variant="secondary" onClick={() => void list.refetch()}>
+          <RefreshCw className="size-3.5" aria-hidden="true" />
           Обновить
         </Button>
       </div>
@@ -245,6 +253,7 @@ export default function HomePage() {
             />
 
             <Button size="sm" variant="ghost" onClick={resetAll}>
+              <RotateCcw className="size-3.5" aria-hidden="true" />
               Сбросить всё
             </Button>
           </div>
@@ -270,6 +279,15 @@ export default function HomePage() {
 
           {showEmpty && (
             <div className="rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
+              <span className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-chip text-content-muted">
+                {catalogEmpty ? (
+                  <FilePlus2 className="size-5" aria-hidden="true" />
+                ) : onlyFavorites ? (
+                  <Heart className="size-5" aria-hidden="true" />
+                ) : (
+                  <SearchX className="size-5" aria-hidden="true" />
+                )}
+              </span>
               <p className="text-sm font-medium text-content">
                 {catalogEmpty
                   ? 'Анкет пока нет'
@@ -281,18 +299,20 @@ export default function HomePage() {
                 {catalogEmpty
                   ? 'База пустая — как после деплоя. Первую анкету добавляет любой авторизованный.'
                   : onlyFavorites
-                    ? 'Жмите ♡ на карточке, чтобы сохранить анкету.'
+                    ? 'Жмите на сердечко на карточке, чтобы сохранить анкету.'
                     : 'Ослабьте фильтры или измените поиск.'}
               </p>
               {catalogEmpty ? (
                 <Link
                   to="/hookers/new"
-                  className="mt-4 inline-flex h-8 items-center rounded-full bg-strong px-3 text-[13px] text-surface hover:bg-content"
+                  className="mt-4 inline-flex h-8 items-center gap-1 rounded-full bg-crimson px-3 text-[13px] text-cream hover:opacity-90"
                 >
+                  <FilePlus2 className="size-3.5" aria-hidden="true" />
                   Создать анкету
                 </Link>
               ) : (
                 <Button variant="secondary" size="sm" className="mt-4" onClick={resetAll}>
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
                   Сбросить всё
                 </Button>
               )}

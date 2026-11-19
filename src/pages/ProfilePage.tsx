@@ -1,5 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import {
+  Clock,
+  FilePlus2,
+  History,
+  LogOut,
+  MessageSquareQuote,
+  Pencil,
+  Plus,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -42,22 +53,27 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-medium tracking-tight text-content">Мой профиль</h1>
+          <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
+            <UserRound className="size-5 text-brand-600" aria-hidden="true" />
+            Мой профиль
+          </h1>
           <p className="mt-0.5 text-xs text-content-muted">
             {user?.name} · {user?.email}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             to="/profile/edit"
-            className="inline-flex h-7 items-center rounded-full bg-chip px-3 text-xs text-content hover:bg-content/10"
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-chip px-3 text-xs text-content hover:bg-content/10"
           >
+            <Pencil className="size-3" aria-hidden="true" />
             Редактировать профиль
           </Link>
           <Link
             to="/hookers/new"
-            className="inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface hover:opacity-90"
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream hover:opacity-90"
           >
+            <Plus className="size-3" aria-hidden="true" />
             Создать анкету
           </Link>
           <Button
@@ -68,12 +84,14 @@ export default function ProfilePage() {
               navigate('/auth', { replace: true })
             }}
           >
+            <LogOut className="size-3" aria-hidden="true" />
             Выйти
           </Button>
         </div>
       </div>
 
-      <h2 className="mt-6 text-[11px] tracking-wide text-content-muted uppercase">
+      <h2 className="mt-6 flex items-center gap-1.5 text-[11px] tracking-wide text-content-muted uppercase">
+        <FilePlus2 className="size-3" aria-hidden="true" />
         Мои анкеты{mine.data ? ` (${mine.data.length})` : ''}
       </h2>
 
@@ -95,6 +113,9 @@ export default function ProfilePage() {
 
       {mine.isSuccess && mine.data.length === 0 && (
         <div className="mt-3 rounded-lg bg-mat p-6 text-center ring-1 ring-dashed ring-hairline">
+          <span className="mx-auto mb-2 grid size-9 place-items-center rounded-full bg-chip text-content-muted">
+            <FilePlus2 className="size-4" aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-content">Анкет нет</p>
           <p className="mt-1 text-xs text-content-muted">Опубликуйте первую — она появится в каталоге.</p>
         </div>
@@ -117,12 +138,8 @@ export default function ProfilePage() {
                 {confirmId === item.id ? (
                   <>
                     <span className="text-[11px] text-content-muted">Снять?</span>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      isLoading={remove.isPending}
-                      onClick={() => remove.mutate(item.id)}
-                    >
+                    <Button size="sm" variant="danger" isLoading={remove.isPending} onClick={() => remove.mutate(item.id)}>
+                      <Trash2 className="size-3" aria-hidden="true" />
                       Удалить
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setConfirmId(null)}>
@@ -133,11 +150,13 @@ export default function ProfilePage() {
                   <>
                     <Link
                       to={`/hookers/${item.id}/edit`}
-                      className="inline-flex h-7 items-center rounded-full bg-chip px-2.5 text-xs text-content hover:bg-content/10"
+                      className="inline-flex h-7 items-center gap-1 rounded-full bg-chip px-2.5 text-xs text-content hover:bg-content/10"
                     >
+                      <Pencil className="size-3" aria-hidden="true" />
                       Изменить
                     </Link>
                     <Button size="sm" variant="ghost" onClick={() => setConfirmId(item.id)}>
+                      <Trash2 className="size-3" aria-hidden="true" />
                       Удалить
                     </Button>
                   </>
@@ -148,11 +167,15 @@ export default function ProfilePage() {
         </ul>
       )}
 
-      <h2 className="mt-8 text-[11px] tracking-wide text-content-muted uppercase">
+      <h2 className="mt-8 flex items-center gap-1.5 text-[11px] tracking-wide text-content-muted uppercase">
+        <History className="size-3" aria-hidden="true" />
         История просмотров
       </h2>
       {historyIds.length === 0 && (
-        <p className="mt-2 text-xs text-content-muted">Пока пусто — открытые анкеты появятся здесь.</p>
+        <p className="mt-2 flex items-center gap-1 text-xs text-content-muted">
+          <Clock className="size-3" aria-hidden="true" />
+          Пока пусто — открытые анкеты появятся здесь.
+        </p>
       )}
       {history.isError && (
         <p className="mt-2 text-xs text-content-muted">Историю не удалось подгрузить.</p>
@@ -172,7 +195,10 @@ export default function ProfilePage() {
         </ul>
       )}
 
-      <h2 className="mt-8 text-[11px] tracking-wide text-content-muted uppercase">Мои отзывы</h2>
+      <h2 className="mt-8 flex items-center gap-1.5 text-[11px] tracking-wide text-content-muted uppercase">
+        <MessageSquareQuote className="size-3" aria-hidden="true" />
+        Мои отзывы
+      </h2>
       {myReviews.isSuccess && myReviews.data.length === 0 && (
         <p className="mt-2 text-xs text-content-muted">Вы ещё не писали отзывов.</p>
       )}

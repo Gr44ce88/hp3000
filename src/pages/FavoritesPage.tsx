@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Heart, LogIn } from 'lucide-react'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { Spinner } from '@/components/ui/Spinner'
 import { fetchHookers } from '@/features/hookers/api'
@@ -24,14 +25,18 @@ export default function FavoritesPage() {
       <div className="mx-auto max-w-5xl">
         <h1 className="text-xl font-medium tracking-tight text-content">Избранное</h1>
         <div className="mt-4 rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
+          <span className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-chip text-content-muted">
+            <LogIn className="size-5" aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-content">Нужен вход</p>
           <p className="mt-1 text-xs text-content-muted">
             Избранное хранится в аккаунте — войдите, чтобы видеть сохранённое.
           </p>
           <Link
             to="/auth"
-            className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
+            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream"
           >
+            <LogIn className="size-3" aria-hidden="true" />
             Войти
           </Link>
         </div>
@@ -52,12 +57,18 @@ export default function FavoritesPage() {
 
       {favoritesQuery.isSuccess && ids.length === 0 && (
         <div className="mt-4 rounded-lg bg-mat p-8 text-center ring-1 ring-dashed ring-hairline">
+          <span className="mx-auto mb-3 grid size-10 place-items-center rounded-full bg-chip text-content-muted">
+            <Heart className="size-5" aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-content">Пусто</p>
-          <p className="mt-1 text-xs text-content-muted">Сохраняйте анкеты кнопкой ♡ в каталоге.</p>
+          <p className="mt-1 text-xs text-content-muted">
+            Сохраняйте анкеты сердечком на карточке в каталоге.
+          </p>
           <Link
             to="/"
-            className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
+            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream"
           >
+            <ArrowLeft className="size-3" aria-hidden="true" />
             В каталог
           </Link>
         </div>

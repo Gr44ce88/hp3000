@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 export type ReviewCardProps = {
@@ -58,11 +59,12 @@ export function Stars({ score, className }: { score: number; className?: string 
       role="img"
       aria-label={`Оценка ${value} из 5`}
     >
-      <span aria-hidden="true" className="text-sm tracking-tight">
+      <span aria-hidden="true" className="inline-flex items-center gap-0.5">
         {Array.from({ length: 5 }, (_, index) => (
-          <span key={index} className={index < value ? 'text-rating' : 'text-line'}>
-            ★
-          </span>
+          <Star
+            key={index}
+            className={cn('size-3.5', index < value ? 'fill-rating text-rating' : 'text-line')}
+          />
         ))}
       </span>
       <span className="text-xs font-medium text-content-muted tabular-nums">{value}/5</span>
