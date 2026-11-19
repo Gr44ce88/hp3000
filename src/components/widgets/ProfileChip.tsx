@@ -143,7 +143,7 @@ export function ProfileChip({
             <Link
               role="menuitem"
               to="/auth"
-              className="mt-3 flex h-7 items-center justify-center gap-1.5 rounded-full bg-crimson text-xs font-medium text-cream transition-opacity hover:opacity-90"
+              className="mt-3 flex h-7 items-center justify-center gap-1.5 rounded-full bg-accent text-xs font-medium text-white transition-opacity hover:opacity-90"
             >
               <LogIn className="size-3" aria-hidden="true" />
               Войти

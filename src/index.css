@@ -26,6 +26,8 @@
 
   --color-plum: #34222e;
   --color-crimson: #e2424a;
+  --color-accent: #bf2f38;
+  --color-accent-hover: #a82830;
   --color-peach: #f9bf8f;
   --color-cream: #fee9d6;
 
@@ -60,18 +62,31 @@
 
 .dark {
   --surface: oklch(0.279 0.034 339.6);
-  --surface-elevated: oklch(0.33 0.035 339);
-  --content: oklch(0.946 0.034 64.6);
-  --content-muted: oklch(0.75 0.045 60);
-  --line: oklch(0.4 0.03 340);
-  --hairline: oklch(0.946 0.034 64.6 / 0.16);
-  --mat: oklch(0.305 0.03 339);
-  --chip: oklch(0.946 0.034 64.6 / 0.1);
-  --strong: oklch(0.946 0.034 64.6);
-  --accent-soft: oklch(0.4 0.07 340);
-  --danger: oklch(0.66 0.19 22.5);
-  --rating: oklch(0.846 0.092 60.7);
+  --surface-elevated: oklch(0.35 0.036 339);
+  --content: oklch(0.97 0.02 65);
+  --content-muted: oklch(0.83 0.04 62);
+  --line: oklch(0.55 0.03 340);
+  --hairline: oklch(0.946 0.034 64.6 / 0.2);
+  --mat: oklch(0.325 0.03 339);
+  --chip: oklch(0.946 0.034 64.6 / 0.12);
+  --strong: oklch(0.97 0.02 65);
+  --accent-soft: oklch(0.42 0.07 340);
+  --danger: oklch(0.72 0.19 22.5);
+  --rating: oklch(0.87 0.09 60.7);
   color-scheme: dark;
+}
+
+/* Скроллбар в тон палитре, а не системно-серый. */
+@layer base {
+  * {
+    scrollbar-color: var(--line) transparent;
+    scrollbar-width: thin;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--content);
+  }
 }
 
 @layer base {

@@ -56,7 +56,7 @@ export function AppLayout() {
               to="/"
               className="flex shrink-0 items-center gap-2 font-semibold text-content"
             >
-              <span className="grid size-6 place-items-center rounded-md bg-crimson text-surface">
+              <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
                 <Sparkles className="size-3.5" aria-hidden="true" />
               </span>
               <span className="text-[13px]">HookersPro3000</span>
@@ -95,7 +95,7 @@ export function AppLayout() {
 
             <Link
               to="/hookers/new"
-              className="inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium whitespace-nowrap text-cream transition-opacity hover:opacity-90"
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
             >
               <Plus className="size-3.5" aria-hidden="true" />
               Создать анкету

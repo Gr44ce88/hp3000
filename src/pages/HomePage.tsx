@@ -305,7 +305,7 @@ export default function HomePage() {
               {catalogEmpty ? (
                 <Link
                   to="/hookers/new"
-                  className="mt-4 inline-flex h-8 items-center gap-1 rounded-full bg-crimson px-3 text-[13px] text-cream hover:opacity-90"
+                  className="mt-4 inline-flex h-8 items-center gap-1 rounded-full bg-accent px-3 text-[13px] font-medium text-white hover:opacity-90"
                 >
                   <FilePlus2 className="size-3.5" aria-hidden="true" />
                   Создать анкету

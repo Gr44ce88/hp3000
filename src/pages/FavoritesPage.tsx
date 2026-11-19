@@ -34,7 +34,7 @@ export default function FavoritesPage() {
           </p>
           <Link
             to="/auth"
-            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream"
+            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium text-white"
           >
             <LogIn className="size-3" aria-hidden="true" />
             Войти
@@ -66,7 +66,7 @@ export default function FavoritesPage() {
           </p>
           <Link
             to="/"
-            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream"
+            className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium text-white"
           >
             <ArrowLeft className="size-3" aria-hidden="true" />
             В каталог

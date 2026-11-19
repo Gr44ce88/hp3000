@@ -71,7 +71,7 @@ export default function ProfilePage() {
           </Link>
           <Link
             to="/hookers/new"
-            className="inline-flex h-7 items-center gap-1 rounded-full bg-crimson px-3 text-xs font-medium text-cream hover:opacity-90"
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium text-white hover:opacity-90"
           >
             <Plus className="size-3" aria-hidden="true" />
             Создать анкету

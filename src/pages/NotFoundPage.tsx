@@ -15,7 +15,7 @@ export default function NotFoundPage() {
         </p>
         <Link
           to="/"
-          className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-crimson px-4 text-sm font-medium text-cream transition-opacity hover:opacity-90"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white transition-opacity hover:opacity-90"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           На главную
