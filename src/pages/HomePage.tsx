@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import {
+  ArrowUpDown,
+  Banknote,
   FilePlus2,
   Heart,
   LayoutGrid,
+  MapPin,
   RefreshCw,
   RotateCcw,
   Rows3,
   Search,
   SearchX,
+  SlidersHorizontal,
+  Tags,
 } from 'lucide-react'
+import { Popover, PopoverOption } from '@/components/ui/Popover'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { SortFilterBar } from '@/components/widgets/SortFilterBar'
@@ -19,6 +25,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { fetchHookers } from '@/features/hookers/api'
 import { FILTER_OPTIONS, SORT_OPTIONS, type FilterKey, type SortKey } from '@/features/hookers/sorting'
 import { useSessionStore } from '@/features/auth/store'
+import { SERVICES } from '@/features/hookers/schema'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { useViewModeStore } from '@/stores/viewMode'
 
@@ -46,10 +53,13 @@ export default function HomePage() {
   const sort: SortKey = isSortKey(sortParam) ? sortParam : 'price-asc'
   const filters = (params.get('f') ?? '').split(',').filter(isFilterKey)
   const onlyFavorites = filters.includes('favorites')
+  const hasActive =
+    filters.length > 0 || Boolean(service) || Boolean(city) || Boolean(minPrice) || Boolean(maxPrice)
 
   const [search, setSearch] = useState(query)
 
   const token = useSessionStore((state) => state.token)
+  const availableFilters: readonly FilterKey[] | undefined = token ? undefined : FILTER_OUTSIDE_AUTH
   const favoritesQuery = useFavoriteIds()
   const favorites = favoritesQuery.data ?? []
   const toggleFavoriteMutation = useToggleFavorite()
@@ -204,8 +214,161 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <div className="mt-3 flex flex-col gap-6 sm:flex-row">
-        <aside className="sm:w-56 sm:shrink-0">
+      {/* Десктоп: сортировка и фильтры живут в виджетах-поповерах, на телефоне — панель ниже. */}
+      <div className="mt-2 hidden flex-wrap items-center gap-2 sm:flex">
+        <Popover
+          label="Сортировка"
+          icon={<ArrowUpDown className="size-3.5" aria-hidden="true" />}
+          closeOnSelect
+        >
+          {(close) => (
+            <div className="space-y-0.5">
+              {SORT_OPTIONS.map((option) => (
+                <PopoverOption
+                  key={option.value}
+                  active={sort === option.value}
+                  onClick={() => {
+                    update({ sort: option.value })
+                    close()
+                  }}
+                >
+                  {option.label}
+                </PopoverOption>
+              ))}
+            </div>
+          )}
+        </Popover>
+
+        <Popover
+          label="Фильтры"
+          icon={<SlidersHorizontal className="size-3.5" aria-hidden="true" />}
+          count={filters.length + (service ? 1 : 0)}
+        >
+          {() => (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-1.5">
+                {FILTER_OPTIONS.filter(
+                  (option) => !availableFilters || availableFilters.includes(option.value),
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={filters.includes(option.value)}
+                    onClick={() => toggleFilter(option.value)}
+                    className={
+                      filters.includes(option.value)
+                        ? 'h-7 rounded-full bg-chip px-3 text-xs font-medium text-content ring-1 ring-content/15'
+                        : 'h-7 rounded-full bg-chip px-3 text-xs text-content-muted hover:text-content'
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="border-t border-hairline pt-2">
+                <p className="mb-1.5 flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+                  <Tags className="size-3" aria-hidden="true" />
+                  Услуга
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SERVICES.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={service === option}
+                      onClick={() => update({ service: service === option ? '' : option })}
+                      className={
+                        service === option
+                          ? 'h-7 rounded-full bg-chip px-3 text-xs font-medium text-content ring-1 ring-content/15'
+                          : 'h-7 rounded-full bg-chip px-3 text-xs text-content-muted hover:text-content'
+                      }
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {hasActive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetAll()
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-content-muted underline underline-offset-2 hover:text-content"
+                >
+                  <RotateCcw className="size-3" aria-hidden="true" />
+                  Сбросить всё
+                </button>
+              )}
+            </div>
+          )}
+        </Popover>
+
+        <Popover
+          label="Город"
+          icon={<MapPin className="size-3.5" aria-hidden="true" />}
+          count={city ? 1 : 0}
+          closeOnSelect
+        >
+          {(close) => (
+            <div className="max-h-64 space-y-0.5 overflow-y-auto">
+              <PopoverOption
+                active={!city}
+                onClick={() => {
+                  update({ city: '' })
+                  close()
+                }}
+              >
+                Все города
+              </PopoverOption>
+              {(list.data?.pages[0]?.cities ?? []).map((item) => (
+                <PopoverOption
+                  key={item}
+                  active={city === item}
+                  onClick={() => {
+                    update({ city: item })
+                    close()
+                  }}
+                >
+                  {item}
+                </PopoverOption>
+              ))}
+            </div>
+          )}
+        </Popover>
+
+        <Popover
+          label="Цена"
+          icon={<Banknote className="size-3.5" aria-hidden="true" />}
+          count={minPrice || maxPrice ? 1 : 0}
+        >
+          {() => (
+            <div className="flex gap-2">
+              <Input
+                value={minPrice}
+                onChange={(event) => update({ min: event.target.value.replace(/\D/g, '') })}
+                placeholder="от ₽"
+                aria-label="Цена от"
+                inputMode="numeric"
+                className="h-8 text-xs sm:text-xs"
+              />
+              <Input
+                value={maxPrice}
+                onChange={(event) => update({ max: event.target.value.replace(/\D/g, '') })}
+                placeholder="до ₽"
+                aria-label="Цена до"
+                inputMode="numeric"
+                className="h-8 text-xs sm:text-xs"
+              />
+            </div>
+          )}
+        </Popover>
+      </div>
+
+      <div className="mt-3">
+        <aside className="space-y-3 sm:hidden">
           <div className="sticky top-[3.5rem] space-y-3">
             <select
               value={city}
@@ -259,7 +422,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div className="mt-4 min-w-0 sm:mt-0">
           {list.isPending && (
             <div className="mt-4">
               <Spinner label="Загружаем анкеты" />
