@@ -10,6 +10,7 @@ const titles: ReadonlyArray<readonly [RegExp, string]> = [
   [/^\/profile\/edit$/, 'Редактирование профиля'],
   [/^\/widgets$/, 'Виджеты'],
   [/^\/favorites$/, 'Избранное'],
+  [/^\/map$/, 'Карта'],
   [/^\/heatmap$/, 'Карта'],
 ]
 

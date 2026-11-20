@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppLayout } from '@/app/AppLayout'
 import { FullPageSpinner } from '@/components/ui/Spinner'
 import { RequireAuth } from '@/features/auth/RequireAuth'
@@ -12,7 +12,7 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ProfileEditPage = lazy(() => import('@/pages/ProfileEditPage'))
 const EditHookerPage = lazy(() => import('@/pages/EditHookerPage'))
 const FavoritesPage = lazy(() => import('@/pages/FavoritesPage'))
-const HeatmapPage = lazy(() => import('@/pages/HeatmapPage'))
+const MapPage = lazy(() => import('@/pages/MapPage'))
 const WidgetsPage = lazy(() => import('@/pages/WidgetsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -94,12 +94,17 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'heatmap',
+        path: 'map',
         element: (
           <Suspense fallback={<FullPageSpinner />}>
-            <HeatmapPage />
+            <MapPage />
           </Suspense>
         ),
+      },
+      {
+        // старый адрес карты
+        path: 'heatmap',
+        element: <Navigate to="/map" replace />,
       },
       {
         path: 'favorites',

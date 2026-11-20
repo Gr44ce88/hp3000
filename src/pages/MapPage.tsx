@@ -10,7 +10,7 @@ import { fetchDistrictStats } from '@/features/hookers/api'
 const HOT = 3
 const WARM = 2
 
-export default function HeatmapPage() {
+export default function MapPage() {
   const navigate = useNavigate()
   const stats = useQuery({
     queryKey: ['stats', 'districts'],
