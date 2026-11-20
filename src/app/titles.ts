@@ -10,7 +10,7 @@ const titles: ReadonlyArray<readonly [RegExp, string]> = [
   [/^\/profile\/edit$/, 'Редактирование профиля'],
   [/^\/widgets$/, 'Виджеты'],
   [/^\/favorites$/, 'Избранное'],
-  [/^\/heatmap$/, 'Тепловая карта'],
+  [/^\/heatmap$/, 'Карта'],
 ]
 
 export function titleFor(pathname: string): string | undefined {

@@ -23,7 +23,7 @@ const YEAR = new Date().getFullYear()
 
 const navItems = [
   { to: '/', label: 'Анкеты', icon: LayoutGrid, end: true },
-  { to: '/heatmap', label: 'Тепловая карта', icon: Flame },
+  { to: '/heatmap', label: 'Карта', icon: Flame },
 ] as const
 
 export function AppLayout() {
@@ -145,7 +145,7 @@ export function AppLayout() {
           </Link>
           <Link to="/heatmap" className="inline-flex items-center gap-1 hover:text-content">
             <Flame className="size-3" aria-hidden="true" />
-            Тепловая карта
+            Карта
           </Link>
           <Link to="/favorites" className="inline-flex items-center gap-1 hover:text-content">
             <Heart className="size-3" aria-hidden="true" />

@@ -29,10 +29,11 @@ export default function HeatmapPage() {
     <div className="mx-auto max-w-5xl">
       <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
         <Flame className="size-5 text-brand-600" aria-hidden="true" />
-        Тепловая карта
+        Карта
       </h1>
       <p className="mt-0.5 text-[11px] text-content-muted">
-        Плотность анкет по районам на Яндекс.Картах. Клик по пятну открывает анкеты этого района.
+        Анкеты по районам на Яндекс.Картах: пятна показывают плотность, клик по пятну открывает
+        этот район.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_220px]">
