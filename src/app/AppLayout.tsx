@@ -56,38 +56,36 @@ export function AppLayout() {
       </a>
 
       <header className="app-header sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:h-14 sm:gap-x-3 sm:px-4 sm:py-0">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <NavLink
-              to="/"
-              className="flex shrink-0 items-center gap-2 font-semibold text-content"
-            >
-              <span className="wordmark">hp<span>3000</span></span>
-            </NavLink>
+        <div className="header-layout mx-auto max-w-6xl px-3 sm:px-4">
+          <NavLink
+            to="/"
+            className="flex shrink-0 items-center gap-2 font-semibold text-content"
+          >
+            <span className="wordmark">hp<span>3000</span></span>
+          </NavLink>
 
-            <nav aria-label="Основная навигация" className="main-nav -mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={'end' in item ? item.end : undefined}
-                  aria-label={item.label}
-                  title={item.label}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
-                      isActive && 'bg-chip font-medium text-content hover:text-content',
-                    )
-                  }
-                >
-                  <item.icon className="size-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
-          </div>
+          <nav aria-label="Основная навигация" className="main-nav">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={'end' in item ? item.end : undefined}
+                aria-label={item.label}
+                title={item.label}
+                className={({ isActive }) =>
+                  cn(
+                    'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
+                    isActive && 'bg-chip font-medium text-content hover:text-content',
+                  )
+                }
+              >
+                <item.icon className="size-3.5" aria-hidden="true" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
 
-          <div className="relative z-40 ml-auto flex shrink-0 items-center gap-2">
+          <div className="header-actions relative z-40 flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"

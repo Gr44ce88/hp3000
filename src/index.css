@@ -151,9 +151,16 @@
 .app-header {
   background: var(--surface-elevated);
 }
-.app-header > div {
-  height: 64px;
+.header-layout {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "brand nav actions";
+  align-items: center;
+  gap: 0 12px;
+  min-height: 64px;
 }
+.header-layout > a { grid-area: brand; }
+.header-actions { grid-area: actions; justify-self: end; }
 .wordmark {
   font: italic bold 32px/0.95 var(--display);
   letter-spacing: -0.085em;
@@ -164,6 +171,10 @@
   letter-spacing: -0.075em;
 }
 .main-nav {
+  grid-area: nav;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-inline-start: 20px;
 }
 .main-nav a {
@@ -431,25 +442,31 @@ li:nth-child(3n) .monogram {
   border: 1px solid var(--hairline);
   padding: clamp(15px, 2vw, 25px);
 }
-@media (max-width: 639px) {
-  .app-header > div {
-    height: 56px;
+@media (max-width: 55.99rem) {
+  .header-layout {
+    grid-template-areas: "brand actions" "nav nav";
+    grid-template-columns: 1fr auto;
+    padding-block: 6px;
+    row-gap: 4px;
   }
+  .main-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-inline-start: 0;
+  }
+  .main-nav a {
+    justify-content: center;
+    padding-inline: 4px;
+    min-height: 40px;
+  }
+}
+@media (max-width: 639px) {
   .wordmark {
     font-size: 25px;
   }
-  .main-nav {
-    margin-inline-start: 0;
-    gap: 0;
-  }
-  .main-nav a {
-    min-width: 33px;
-    padding-inline: 8px;
-    justify-content: center;
-  }
   .main-nav svg {
-    width: 17px;
-    height: 17px;
+    width: 16px;
+    height: 16px;
   }
   .app-header a[aria-label='Создать анкету'] {
     min-width: 34px;
@@ -460,7 +477,7 @@ li:nth-child(3n) .monogram {
   .signin {
     padding-inline: 5px;
   }
-  .app-header div.ml-auto {
+  .header-actions {
     gap: 3px;
   }
   #main {
