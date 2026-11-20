@@ -42,7 +42,7 @@ export function AppLayout() {
     lastPath.current = pathname
     if (navigationType !== 'POP') window.scrollTo(0, 0)
     const title = titleFor(pathname)
-    document.title = title ? `${title} · hp3000` : 'Страница не найдена · hp3000'
+    document.title = title ? `${title} · hp3k` : 'Страница не найдена · hp3k'
     mainRef.current?.focus({preventScroll: true})
   }, [pathname, navigationType])
 
@@ -61,7 +61,7 @@ export function AppLayout() {
             to="/"
             className="flex shrink-0 items-center gap-2 font-semibold text-content"
           >
-            <span className="wordmark">hp<span>3000</span></span>
+            <span className="wordmark">hp<span>3k</span></span>
           </NavLink>
 
           <nav aria-label="Основная навигация" className="main-nav">
@@ -173,7 +173,7 @@ export function AppLayout() {
             )}
           </Link>
         </nav>
-        <p className="mt-3 text-center text-[11px] text-content-muted">hp3000 · {YEAR}</p>
+        <p className="mt-3 text-center text-[11px] text-content-muted">hp3k · {YEAR}</p>
       </footer>
     </div>
   )

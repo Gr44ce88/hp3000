@@ -3,6 +3,7 @@ import type { Hooker, HookerListParams, HookerListResponse, Review } from './typ
 
 function toQuery(params: HookerListParams): string {
   const search = new URLSearchParams()
+  if (params.metro) search.set('metro', params.metro)
   if (params.q) search.set('q', params.q)
   if (params.city) search.set('city', params.city)
   if (params.district) search.set('district', params.district)
@@ -39,6 +40,7 @@ export async function fetchMyHookers(signal?: AbortSignal): Promise<Hooker[]> {
 }
 
 export type ListingPayload = {
+  addressId?: string
   name: string
   age: number
   city: string
@@ -57,6 +59,7 @@ export type ListingPayload = {
 
 export function toListingBody(input: ListingPayload) {
   return {
+    addressId: input.addressId,
     name: input.name,
     age: Number(input.age),
     city: input.city,

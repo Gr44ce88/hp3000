@@ -14,7 +14,7 @@ import {
   SearchX,
 } from 'lucide-react'
 import { copyText } from '@/lib/clipboard'
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { MobileFilterPanel } from '@/components/widgets/MobileFilterPanel'
 import { CardSkeleton } from '@/components/widgets/CardSkeleton'
@@ -22,8 +22,9 @@ import { ScrollTopButton } from '@/components/widgets/ScrollTopButton'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
-import { fetchDistrictStats, fetchHookers } from '@/features/hookers/api'
-import { DISTRICT_COORDS } from '@/features/hookers/coords'
+import { fetchHookers } from '@/features/hookers/api'
+import { MetroPicker } from '@/features/geo/MetroPicker'
+import { metroLabel } from '@/features/geo/metro'
 import {
   FILTER_OPTIONS,
   SORT_OPTIONS,
@@ -39,9 +40,6 @@ const PAGE_SIZE = 12
 /** Фильтр «До 3 000 ₽» превращается в потолок цены. */
 const CHEAP_LIMIT = 3000
 const FILTER_OUTSIDE_AUTH = ['with-photo', 'up-to-3000', 'reviewed', 'center'] as const
-/** Районы для фильтра: те же, что размечены на карте. */
-const DISTRICTS = Object.keys(DISTRICT_COORDS)
-
 const isFilterKey = (value: string): value is FilterKey =>
   FILTER_OPTIONS.some((option) => option.value === value)
 
@@ -52,15 +50,10 @@ export default function HomePage() {
   const [params, setParams] = useSearchParams()
   const location = useLocation()
   const [copyStatus, setCopyStatus] = useState('')
-  const stats = useQuery({
-    queryKey: ['stats', 'districts'],
-    queryFn: ({ signal }) => fetchDistrictStats(signal),
-    staleTime: 60_000,
-  })
-
   // Всё состояние каталога живёт в адресной строке: переживает перезагрузку и шарится ссылкой.
   const query = params.get('q') ?? ''
   const city = params.get('city') ?? ''
+  const metro = params.get('metro') ?? ''
   const district = params.get('district') ?? ''
   const service = params.get('service') ?? ''
   const minPrice = params.get('min') ?? ''
@@ -73,16 +66,11 @@ export default function HomePage() {
     filters.length > 0 ||
     Boolean(service) ||
     Boolean(city) ||
+    Boolean(metro) ||
     Boolean(district) ||
     Boolean(minPrice) ||
     Boolean(maxPrice)
 
-  const districts = stats.data
-    ? stats.data.filter((row) => !city || row.city === city).map((row) => row.district)
-    : DISTRICTS
-  const districtOptions = [
-    ...new Set([...districts, ...(district ? [district] : [])]),
-  ].sort((a, b) => a.localeCompare(b, 'ru'))
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const [debouncedQuery, setDebouncedQuery] = useState(query)
 
@@ -125,6 +113,7 @@ export default function HomePage() {
         q: debouncedQuery,
         city,
         district,
+        metro,
         service,
         minPrice,
         maxPrice: maxPriceEffective,
@@ -138,6 +127,7 @@ export default function HomePage() {
         {
           q: debouncedQuery || undefined,
           city: city || undefined,
+          metro: metro || undefined,
           district: district || undefined,
           service: service || undefined,
           minPrice: Number(minPrice) || undefined,
@@ -191,6 +181,7 @@ export default function HomePage() {
     total === 0 &&
     !query &&
     !city &&
+    !metro &&
     !district &&
     !service &&
     !minPrice &&
@@ -239,19 +230,7 @@ export default function HomePage() {
             />
           </span>
         </label>
-        <label>
-          <span>Район</span>
-          <select
-            aria-label="Район"
-            value={district}
-            onChange={(event) => update({ district: event.target.value })}
-          >
-            <option value="">Все районы</option>
-            {districtOptions.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-        </label>
+        <MetroPicker value={metro} onChange={value => update({ metro: value, district: '' })} />
         <label>
           <span>Бюджет за час, ₽</span>
           <Input
@@ -268,6 +247,7 @@ export default function HomePage() {
         </label>
       </section>
 
+      {district && <button className="mt-2 underline" onClick={() => update({district:null})}>Район {district} ×</button>}
       <div className="mt-3">
         <MobileFilterPanel
           className="advanced-panel"
@@ -431,7 +411,7 @@ export default function HomePage() {
                       name={item.name}
                       age={item.age}
                       city={item.city}
-                      district={item.district}
+                      district={[item.district, item.address?.metroIds.length ? 'м. ' + metroLabel(item.address.metroIds.slice(0,1)) : ''].filter(Boolean).join(' · ')}
                       catalogUrl={location.pathname + location.search}
                       pricePerHour={item.pricePerHour}
                       height={item.height}

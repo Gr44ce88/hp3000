@@ -1,3 +1,5 @@
+import { AddressField } from '@/features/geo/AddressField'
+import type { HouseAddress } from '@/features/geo/metro'
 import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
@@ -23,6 +25,7 @@ import { uploadPhoto } from '@/features/hookers/api'
 import { cn } from '@/lib/cn'
 
 type Props = {
+  initialAddress?: HouseAddress | null
   defaultValues?: Partial<ListingInput>
   submitLabel: string
   pending?: boolean
@@ -33,13 +36,16 @@ type Props = {
 
 export function HookerForm({
   defaultValues,
+  initialAddress,
   submitLabel,
   pending = false,
   error,
   requiresPayment = true,
   onSubmit,
 }: Props) {
-  const [, setSaved] = useState<ListingValues | null>(null)
+  const [address,setAddress] = useState<HouseAddress | null>(initialAddress ?? null)
+  const [addressError,setAddressError] = useState('')
+  const [addressTouched,setAddressTouched] = useState(false)
 
   const {
     register,
@@ -51,9 +57,10 @@ export function HookerForm({
   } = useForm<ListingInput, unknown, ListingValues>({
     resolver: zodResolver(listingSchema),
     mode: 'onTouched',
-    defaultValues: { paymentMethod: 'card', ...defaultValues },
+    defaultValues: { paymentMethod: 'card', city:CITIES[0], ...defaultValues },
   })
 
+  const city = useWatch({control,name:'city'}) ?? CITIES[0]
   const paymentMethod = useWatch({ control, name: 'paymentMethod' })
   const about = useWatch({ control, name: 'about' }) ?? ''
   const photos = useWatch({ control, name: 'photos' }) ?? []
@@ -101,8 +108,12 @@ export function HookerForm({
       noValidate
       className="space-y-4"
       onSubmit={handleSubmit((values) => {
-        setSaved(null)
-        onSubmit(values as ListingPayload)
+        if (!address && (requiresPayment || addressTouched || values.city !== defaultValues?.city)) {
+          setAddressError('Найдите дом и подтвердите адрес встречи.')
+          document.getElementById('meeting-address')?.scrollIntoView({block:'center'})
+          return
+        }
+        onSubmit({...values, addressId:address?.id})
       })}
     >
       {error && (
@@ -131,7 +142,7 @@ export function HookerForm({
           <select
             id="city"
             className="h-10 w-full rounded-md border border-line bg-surface-elevated px-2 text-base text-content sm:text-sm"
-            {...register('city')}
+            {...register('city', {onChange:()=>{setAddress(null);setAddressTouched(true);setAddressError('')}})}
           >
             <option value={CITIES[0]}>{CITIES[0]}</option>
             {CITIES.slice(1).map((city) => (
@@ -153,6 +164,10 @@ export function HookerForm({
         />
       </Field>
 
+      <div id="meeting-address"><AddressField key={city} city={city} initial={address} selected={address}
+        onChange={item=>{setAddress(item);setAddressTouched(true);setAddressError('')}}/>
+        {addressError && <p role="alert" className="text-sm text-danger">{addressError}</p>}
+      </div>
       <Field label="Район" htmlFor="district" error={errors.district?.message}>
         <Input id="district" placeholder="Например, Пресня" maxLength={60} {...register('district')} />
       </Field>

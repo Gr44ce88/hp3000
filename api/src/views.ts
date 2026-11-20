@@ -1,9 +1,12 @@
+import type { HouseAddress } from '../../src/features/geo/metro.ts'
+
 /** Представление анкеты в ответах API — ровно то, что ждёт клиент. */
 export type HookerView = {
   id: string
   name: string
   age: number
   city: string
+  address: HouseAddress | null
   district: string
   region: string
   phone: string
@@ -27,6 +30,7 @@ export type HookerRow = {
   name: string
   age: number
   city: string
+  address: HouseAddress | null
   district: string
   region: string
   phone: string
@@ -46,6 +50,8 @@ export type HookerRow = {
 
 /** Колонки с агрегатами: рейтинг и число отзывов считаются по таблице reviews. */
 export const HOOKER_COLUMNS = `
+  case when a.id is not null then json_build_object('id',a.id,'city',a.city,'street',a.street,
+    'house',a.house,'lat',a.lat,'lon',a.lon,'metroIds',a.metro_ids) end as address,
   h.id, h.name, h.age, h.city, h.district, h.region, h.phone, h.height,
   h.price_per_hour, h.services, h.about, h.photos, h.main_photo, h.is_new, h.is_published, h.created_at, h.owner_id,
   coalesce(r.reviews_count, 0) as reviews_count,
@@ -53,6 +59,7 @@ export const HOOKER_COLUMNS = `
 `
 
 export const HOOKER_JOIN = `
+  left join house_addresses a on a.id = h.address_id
   left join (
     select hooker_id, count(*) as reviews_count, round(avg(rating)::numeric, 1) as rating
     from reviews
@@ -61,6 +68,7 @@ export const HOOKER_JOIN = `
 `
 
 export const toView = (row: HookerRow): HookerView => ({
+  address: row.address,
   id: row.id,
   name: row.name,
   age: row.age,

@@ -53,6 +53,7 @@ export default function EditHookerPage() {
       <p className="mt-1 text-xs text-content-muted">Повторная оплата не нужна.</p>
       <div className="mt-5">
         <HookerForm
+          initialAddress={item.address}
           submitLabel="Сохранить"
           pending={update.isPending}
           error={error}

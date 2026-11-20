@@ -31,6 +31,7 @@ export const meSchema = z.object({
 })
 
 export const listingSchema = z.object({
+  addressId: z.uuid().optional(),
   name: z
     .string()
     .trim()
@@ -66,6 +67,7 @@ export const reviewSchema = z.object({
 })
 
 export const listQuerySchema = z.object({
+  metro: z.string().max(30).optional(),
   q: z.string().trim().max(60).optional(),
   city: z.string().trim().optional(),
   district: z.string().trim().max(60).optional(),

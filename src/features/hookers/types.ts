@@ -1,6 +1,8 @@
 export type HookerKind = 'project' | 'deal' | 'other'
 
+import type { HouseAddress } from '@/features/geo/metro'
 export type Hooker = {
+  address?: HouseAddress | null
   id: string
   name: string
   age: number
@@ -32,6 +34,7 @@ export type Review = {
 }
 
 export type HookerListParams = {
+  metro?: string
   q?: string
   city?: string
   district?: string

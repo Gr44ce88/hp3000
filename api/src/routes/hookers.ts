@@ -1,3 +1,4 @@
+import { verifyAddress } from './addresses.ts'
 import { Router } from 'express'
 import { attachUser, currentUser, requireAuth } from '../auth/middleware.ts'
 import { one, query } from '../db/pool.ts'
@@ -58,6 +59,10 @@ hookersRouter.get(
     if (params.q) {
       values.push(`%${params.q.toLowerCase()}%`)
       where.push(`(lower(h.name) like $${values.length} or lower(h.city) like $${values.length} or lower(h.district) like $${values.length})`)
+    }
+    if (params.metro) {
+      values.push(params.metro)
+      where.push(`a.metro_ids @> array[$${values.length}]::text[]`)
     }
     if (params.city) {
       values.push(params.city)
@@ -150,9 +155,10 @@ hookersRouter.post(
   requireAuth,
   handle(async (req, res) => {
     const input = parseBody(listingSchema, req.body)
+    await verifyAddress(input.addressId, input.city)
     const rows = await query<{ id: string }>(
-      `insert into hookers (owner_id, name, age, city, district, region, phone, height, price_per_hour, services, about, photos, main_photo, is_published)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false)
+      `insert into hookers (owner_id, name, age, city, district, region, phone, height, price_per_hour, services, about, photos, main_photo, is_published, address_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false, $14)
        returning id`,
       [
         currentUser(req).id,
@@ -168,6 +174,7 @@ hookersRouter.post(
         input.about,
         input.photos,
         input.mainPhoto || input.photos[0] || '',
+        input.addressId ?? null,
       ],
     )
     res.status(201).json(toView(await findHooker(rows[0]!.id)))
@@ -184,6 +191,7 @@ hookersRouter.patch(
     }
 
     const input = parseBody(listingSchema, {
+      addressId: req.body?.addressId ?? existing.address?.id,
       name: req.body?.name ?? existing.name,
       age: req.body?.age ?? existing.age,
       city: req.body?.city ?? existing.city,
@@ -198,10 +206,11 @@ hookersRouter.patch(
       mainPhoto: req.body?.mainPhoto ?? existing.main_photo,
     })
 
+    if (input.addressId || existing.city !== input.city) await verifyAddress(input.addressId, input.city)
     await one(
       `update hookers set name = $2, age = $3, city = $4, district = $5, region = $6,
               phone = $7, height = $8, price_per_hour = $9, services = $10, about = $11,
-              photos = $12, main_photo = $13
+              photos = $12, main_photo = $13, address_id = $14
        where id = $1`,
       [
         existing.id,
@@ -217,6 +226,7 @@ hookersRouter.patch(
         input.about,
         input.photos,
         input.mainPhoto || input.photos[0] || '',
+        input.addressId ?? null,
       ],
     )
     res.json(toView(await findHooker(existing.id)))

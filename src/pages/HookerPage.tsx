@@ -17,7 +17,8 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Spinner } from '@/components/ui/Spinner'
-import { YandexMap } from '@/components/widgets/YandexMap'
+import { HouseMap } from '@/features/geo/HouseMap'
+import { addressLabel, metroLabel } from '@/features/geo/metro'
 import { SimilarHookers } from '@/components/widgets/SimilarHookers'
 import { PhotoGallery } from '@/components/widgets/PhotoGallery'
 import { ReviewCard, Stars } from '@/components/widgets/ReviewCard'
@@ -293,26 +294,15 @@ export default function HookerDetailPage() {
         </div>
       </div>
 
-      <div className="mt-8 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[11px] tracking-wide text-content-muted uppercase">Район</h2>
-          <a
-            href={`https://yandex.ru/maps/?text=${encodeURIComponent(
-              `${item.city}${item.district ? `, ${item.district}` : ''}`,
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] text-content-muted underline decoration-hairline underline-offset-2 hover:text-content"
-          >
-            Открыть в Яндексе
-          </a>
-        </div>
-        <YandexMap
-          points={[{ district: item.district, city: item.city, count: 1 }]}
-          hot={1}
-          warm={1}
-        />
-      </div>
+      <section className="mt-8 space-y-3">
+        <h2 className="font-medium">Адрес встречи</h2>
+        {item.address ? <>
+          <p>{addressLabel(item.address)}</p>
+          {item.address.metroIds.length > 0 && <p className="text-sm text-content-muted">Метро рядом · {metroLabel(item.address.metroIds)}</p>}
+          <HouseMap items={[{id:item.id,name:item.name,address:item.address}]}/>
+          <a className="underline" target="_blank" rel="noreferrer" href={`https://yandex.ru/maps/?pt=${item.address.lon},${item.address.lat}&z=17`}>Открыть дом в Яндекс Картах</a>
+        </> : <p className="text-content-muted">{item.district && item.district+' · '}Автор пока не указал дом.</p>}
+      </section>
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-2">

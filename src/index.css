@@ -553,3 +553,28 @@ li:nth-child(3n) .monogram {
   font-size: 14px;
   white-space: nowrap;
 }
+
+.metro-control {display:grid;align-content:start;min-width:0;gap:6px;font-size:13px;font-weight:600}
+.metro-trigger {display:flex;align-items:center;gap:8px;min-width:0;height:44px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--content);font-size:16px;font-weight:400}
+.metro-trigger span {flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.metro-trigger svg {flex:none}
+.station-sheet {position:fixed;inset:0;margin:auto;width:min(28rem,calc(100vw - 24px));max-height:85dvh;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--surface-elevated);color:var(--content)}
+.station-sheet::backdrop {background:#170c16a8}
+.station-inner {padding:18px;display:grid;gap:12px}
+.station-inner header {display:flex;align-items:center;justify-content:space-between}
+.station-inner header h2 {font:500 26px Georgia,serif}
+.station-inner header button {padding:10px}
+.finder .station-search {position:relative;display:block}
+.station-search svg {position:absolute;left:12px;top:13px}
+.finder .station-search input {padding-left:38px}
+.station-list {max-height:min(52dvh,26rem);overflow:auto;overscroll-behavior:contain}
+.station-list button {display:flex;align-items:center;gap:12px;text-align:left;width:100%;min-height:44px;padding:8px 12px;border-radius:8px;font-size:16px}
+.station-list button:hover,.station-list button[aria-pressed=true] {background:var(--chip)}
+.station-list i {height:12px;width:12px;flex:none;border-radius:100%}
+.station-list small {display:block;font-size:12px;color:var(--content-muted);font-weight:400}
+@media(max-width:480px){.station-sheet{margin:auto auto 0;width:100%;border-radius:18px 18px 0 0}.station-list{max-height:55dvh}}
+.house-map {height:clamp(240px,48dvh,500px);width:100%;border-radius:14px;isolation:isolate;background:var(--mat)}
+.house-pin span {display:block;width:24px;height:24px;border-radius:50% 50% 50% 0;background:#a8194a;border:2px solid white;box-shadow:0 2px 5px #27132166;transform:rotate(-45deg)}
+.house-pin span::after {content:'';display:block;width:6px;height:6px;margin:7px;border-radius:50%;background:white}
+
+.house-map .leaflet-popup button {display:block;width:100%;min-height:36px;text-align:left}

@@ -64,7 +64,7 @@ describe('HomePage', () => {
     }))
     renderWithProviders(<HomePage />, { route: '/?district=Пресня&max=3000' })
     expect(await screen.findByLabelText('Максимальный бюджет')).toHaveValue('3000')
-    expect(screen.getByLabelText('Район')).toHaveValue('Пресня')
+    expect(screen.getByRole('button', {name:'Район Пресня ×'})).toBeInTheDocument()
     await waitFor(() => expect(urls.some(({ searchParams }) =>
       searchParams.get('district') === 'Пресня' && searchParams.get('maxPrice') === '3000')).toBe(true))
     expect(await screen.findByRole('link', { name: /Анкета: Первый контакт.*Пресня/ })).toBeInTheDocument()

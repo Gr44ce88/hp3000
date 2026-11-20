@@ -59,7 +59,12 @@ expect 200 "$(call PATCH /me '{"avatarUrl":"/uploads/avatar.png"}' "$TOKEN")" '�
 expect 422 "$(call PATCH /me '{"avatarUrl":"'"$(printf 'a%.0s' $(seq 1 320))"'"}' "$TOKEN")" 'слишком длинный адрес аватара'
 
 expect 422 "$(call POST /hookers '{"name":"А","age":12}' "$TOKEN")" 'валидация анкеты'
-expect 201 "$(call POST /hookers '{"name":"Тестовая","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-01","height":170,"pricePerHour":3000,"services":["Классика"],"about":"Смоук-анкета"}' "$TOKEN")" 'создание анкеты'
+expect 200 "$(call POST /addresses/lookup '{"city":"Москва","street":"Тверская улица","house":"13"}' "$TOKEN")" 'поиск дома'
+ADDRESS="$(json '.items[0].id')"
+METRO="$(json '.items[0].metroIds[0]')"
+LAT="$(json '.items[0].lat')"
+LON="$(json '.items[0].lon')"
+expect 201 "$(call POST /hookers '{"addressId":"'"$ADDRESS"'","name":"Тестовая","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-01","height":170,"pricePerHour":3000,"services":["Классика"],"about":"Смоук-анкета"}' "$TOKEN")" 'создание анкеты'
 ID="$(json .id)"
 expect 200 "$(call GET "/hookers/$ID" '' "$TOKEN")" 'чтение своей анкеты'
 expect 200 "$(call PATCH "/hookers/$ID" '{"pricePerHour":3200}' "$TOKEN")" 'правка анкеты'
@@ -84,7 +89,7 @@ node -e "require('fs').writeFileSync(process.argv[1], Buffer.from('iVBORw0KGgoAA
 expect 401 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/uploads")" 'загрузка без токена'
 expect 201 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/uploads" -H "authorization: Bearer $TOKEN" -F "file=@$TMP/p.png")" 'загрузка фото'
 PHOTO="$(json .url)"
-printf '%s' '{"name":"С фото","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-07","height":166,"pricePerHour":2500,"services":["GFE"],"photos":["'"$PHOTO"'"],"mainPhoto":"'"$PHOTO"'"}' >"$TMP/ph.json"
+printf '%s' '{"addressId":"'"$ADDRESS"'","name":"С фото","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-07","height":166,"pricePerHour":2500,"services":["GFE"],"photos":["'"$PHOTO"'"],"mainPhoto":"'"$PHOTO"'"}' >"$TMP/ph.json"
 expect 201 "$(curl -s -o "$TMP/body" -w '%{http_code}' -X POST "$BASE/hookers" -H 'content-type: application/json' -H "authorization: Bearer $TOKEN" -d "@$TMP/ph.json")" 'анкета с фото и услугой'
 PH_ID="$(json .id)"
 MAIN="$(json .mainPhoto)"
@@ -115,7 +120,7 @@ expect 404 "$(call GET "/hookers/$ID")" 'удалённая анкета не н
 expect 404 "$(call GET /%D0%BC%D1%83%D1%81%D0%BE%D1%80)" 'неизвестная ручка'
 
 # ——— оплата публикации (FreeKassa, тестовые ключи из .env) ———
-expect 201 "$(call POST /hookers '{"name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'
+expect 201 "$(call POST /hookers '{"addressId":"'"$ADDRESS"'","name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'
 PAID_ID="$(json .id)"
 expect 200 "$(call GET "/hookers/$PAID_ID" '' "$TOKEN")" 'своя неоплаченная видна'
 FEE="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$TMP/body','utf8')).pricePerHour)")"
@@ -147,6 +152,12 @@ else
   FAILED=$((FAILED + 1))
 fi
 expect 200 "$(call GET "/hookers/$PAID_ID")" 'анкета опубликована после оплаты'
+expect 200 "$(call GET "/hookers?metro=$METRO&maxPrice=2000&ids=$PAID_ID")" 'поиск по метро и бюджету'
+expect "$PAID_ID" "$(json '.items[0].id')" 'находится опубликованная анкета'
+expect 200 "$(call GET "/hookers?metro=$METRO&maxPrice=1999&ids=$PAID_ID")" 'станция с меньшим бюджетом'
+expect 0 "$(json .total)" 'дорогая анкета исключена'
+expect 200 "$(call GET /map/listings)" 'точки домов'
+expect "$LAT,$LON" "$(node -e "const a=JSON.parse(require('fs').readFileSync(process.argv[1])).items.find(i=>i.id===process.argv[2])?.address;console.log([a?.lat,a?.lon].join(','))" "$TMP/body" "$PAID_ID")" 'координаты карты совпадают с домом'
 expect 200 "$(call POST '/payments/freekassa/notify' "{\"MERCHANT_ID\":\"12345\",\"AMOUNT\":\"$AMOUNT\",\"MERCHANT_ORDER_ID\":\"$ORDER_ID\",\"SIGN\":\"$GOOD_SIGN\"}")" 'повторное оповещение'
 expect 204 "$(call DELETE "/hookers/$PAID_ID" '' "$TOKEN")" 'уборка платной анкеты'
 
