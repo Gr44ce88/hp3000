@@ -107,7 +107,7 @@ async function main(): Promise<void> {
     for (let index = 0; index < COUNT; index += 1) {
       const mine = index < 3
       const place = index % 5 === 0 ? pick(CITIES) : CITIES[0]
-      const district = place.city === 'Москва' ? pick(DISTRICTS) : pick(['Центр', 'Левобережный'])
+      const district = place.city === 'Москва' ? DISTRICTS[index % DISTRICTS.length]! : 'Центр'
       const photoCount = index % 4 === 0 ? 0 : between(1, 3)
       const photos = Array.from({ length: photoCount }, (_, n) => URL_COVER(index + n + 1))
       const services = Array.from(new Set(Array.from({ length: between(1, 3) }, () => pick(SERVICES))))

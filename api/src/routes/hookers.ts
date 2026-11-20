@@ -63,6 +63,10 @@ hookersRouter.get(
       values.push(params.city)
       where.push(`h.city = $${values.length}`)
     }
+    if (params.district) {
+      values.push(params.district)
+      where.push(`h.district = $${values.length}`)
+    }
     if (params.service) {
       values.push(params.service)
       where.push(`$${values.length} = any(h.services)`)

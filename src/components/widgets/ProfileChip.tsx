@@ -116,7 +116,7 @@ export function ProfileChip({
         className="flex h-8 items-center gap-1.5 rounded-full bg-chip pr-2.5 pl-1 text-content transition-colors hover:bg-content/10"
       >
         <Avatar variant={variant} name={name} avatarUrl={avatarUrl} />
-        <span className="max-w-32 truncate text-xs">{label}</span>
+        <span className="hidden max-w-32 truncate text-xs sm:inline">{label}</span>
         <span
           aria-hidden="true"
           className={cn('text-content-muted transition-transform', open && 'rotate-180')}
@@ -173,8 +173,8 @@ export function ProfileChip({
 
         {variant === 'own' && (
           <div className="space-y-0.5">
-            <MenuItem to="/profile/edit" icon={Pencil}>
-              Редактировать
+            <MenuItem to="/profile" icon={UserRound}>
+              Мой профиль
             </MenuItem>
             <MenuItem to="/favorites" icon={Heart}>
               Избранное

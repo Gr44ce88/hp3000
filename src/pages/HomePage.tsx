@@ -23,8 +23,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
 import { fetchHookers } from '@/features/hookers/api'
+import { DISTRICT_COORDS } from '@/features/hookers/coords'
 import { FILTER_OPTIONS, SORT_OPTIONS, type FilterKey, type SortKey } from '@/features/hookers/sorting'
 import { useSessionStore } from '@/features/auth/store'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { SERVICES } from '@/features/hookers/schema'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { useViewModeStore } from '@/stores/viewMode'
@@ -33,6 +35,8 @@ const PAGE_SIZE = 12
 /** Фильтр «До 3 000 ₽» превращается в потолок цены. */
 const CHEAP_LIMIT = 3000
 const FILTER_OUTSIDE_AUTH = ['with-photo', 'up-to-3000', 'reviewed', 'center'] as const
+/** Районы для фильтра: те же, что размечены на карте. */
+const DISTRICTS = Object.keys(DISTRICT_COORDS)
 
 const isFilterKey = (value: string): value is FilterKey =>
   FILTER_OPTIONS.some((option) => option.value === value)
@@ -46,6 +50,7 @@ export default function HomePage() {
   // Всё состояние каталога живёт в адресной строке: переживает перезагрузку и шарится ссылкой.
   const query = params.get('q') ?? ''
   const city = params.get('city') ?? ''
+  const district = params.get('district') ?? ''
   const service = params.get('service') ?? ''
   const minPrice = params.get('min') ?? ''
   const maxPrice = params.get('max') ?? ''
@@ -54,7 +59,7 @@ export default function HomePage() {
   const filters = (params.get('f') ?? '').split(',').filter(isFilterKey)
   const onlyFavorites = filters.includes('favorites')
   const hasActive =
-    filters.length > 0 || Boolean(service) || Boolean(city) || Boolean(minPrice) || Boolean(maxPrice)
+    filters.length > 0 || Boolean(service) || Boolean(city) || Boolean(district) || Boolean(minPrice) || Boolean(maxPrice)
 
   const [search, setSearch] = useState(query)
 
@@ -64,6 +69,9 @@ export default function HomePage() {
   const favorites = favoritesQuery.data ?? []
   const toggleFavoriteMutation = useToggleFavorite()
   const mode = useViewModeStore((state) => state.mode)
+  const isMobile = useMediaQuery('(max-width: 639px)')
+  // На телефоне всегда книжная сетка: альбомные карточки в узком экране тесны.
+  const viewMode = isMobile ? 'grid' : mode
   const setMode = useViewModeStore((state) => state.setMode)
 
   const update = (patch: Record<string, string | null>) => {
@@ -97,13 +105,14 @@ export default function HomePage() {
   const list = useInfiniteQuery({
     queryKey: [
       'hookers',
-      { q: query, city, service, minPrice, maxPrice: maxPriceEffective, sort, filters, ids: onlyFavorites ? favorites : [] },
+      { q: query, city, district, service, minPrice, maxPrice: maxPriceEffective, sort, filters, ids: onlyFavorites ? favorites : [] },
     ],
     queryFn: ({ pageParam, signal }) =>
       fetchHookers(
         {
           q: query || undefined,
           city: city || undefined,
+          district: district || undefined,
           service: service || undefined,
           minPrice: Number(minPrice) || undefined,
           maxPrice: Number(maxPriceEffective) || undefined,
@@ -138,6 +147,7 @@ export default function HomePage() {
     total === 0 &&
     !query &&
     !city &&
+    !district &&
     !service &&
     !minPrice &&
     !maxPrice &&
@@ -180,7 +190,11 @@ export default function HomePage() {
           />
         </div>
 
-        <div role="group" aria-label="Вид карточек" className="flex gap-1 rounded-full bg-chip p-1">
+        <div
+          role="group"
+          aria-label="Вид карточек"
+          className="hidden gap-1 rounded-full bg-chip p-1 sm:flex"
+        >
           {(
             [
               ['grid', 'Книжная'],
@@ -332,34 +346,54 @@ export default function HomePage() {
         </Popover>
 
         <Popover
-          label="Город"
+          label="Город и район"
           icon={<MapPin className="size-3.5" aria-hidden="true" />}
-          count={city ? 1 : 0}
-          closeOnSelect
+          count={(city ? 1 : 0) + (district ? 1 : 0)}
         >
-          {(close) => (
-            <div className="max-h-64 space-y-0.5 overflow-y-auto">
-              <PopoverOption
-                active={!city}
-                onClick={() => {
-                  update({ city: '' })
-                  close()
-                }}
-              >
-                Все города
-              </PopoverOption>
-              {(list.data?.pages[0]?.cities ?? []).map((item) => (
+          {() => (
+            <div className="space-y-2">
+              <div className="max-h-52 space-y-0.5 overflow-y-auto">
                 <PopoverOption
-                  key={item}
-                  active={city === item}
-                  onClick={() => {
-                    update({ city: item })
-                    close()
-                  }}
+                  active={!city}
+                  onClick={() => update({ city: '', district: '' })}
                 >
-                  {item}
+                  Все города
                 </PopoverOption>
-              ))}
+                {(list.data?.pages[0]?.cities ?? []).map((item) => (
+                  <PopoverOption
+                    key={item}
+                    active={city === item}
+                    onClick={() => update({ city: item, district: '' })}
+                  >
+                    {item}
+                  </PopoverOption>
+                ))}
+              </div>
+
+              {(!city || city === 'Москва') && (
+                <div className="border-t border-hairline pt-2">
+                  <p className="mb-1.5 text-[11px] tracking-wide text-content-muted uppercase">
+                    Район
+                  </p>
+                  <div className="flex max-h-52 flex-wrap gap-1.5 overflow-y-auto">
+                    {DISTRICTS.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        aria-pressed={district === item}
+                        onClick={() => update({ district: district === item ? '' : item })}
+                        className={
+                          district === item
+                            ? 'h-7 rounded-full bg-chip px-3 text-xs font-medium text-content ring-1 ring-content/15'
+                            : 'h-7 rounded-full bg-chip px-3 text-xs text-content-muted hover:text-content'
+                        }
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </Popover>
@@ -484,7 +518,7 @@ export default function HomePage() {
             <>
               <ul
                 className={
-                  mode === 'grid'
+                  viewMode === 'grid'
                     ? 'grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-3'
                     : 'space-y-3'
                 }
@@ -504,7 +538,7 @@ export default function HomePage() {
                       rating={item.rating}
                       reviewsCount={item.reviewsCount}
                       isNew={item.isNew}
-                      orientation={mode === 'list' ? 'landscape' : 'portrait'}
+                      orientation={viewMode === 'list' ? 'landscape' : 'portrait'}
                       isFavorite={favorites.includes(item.id)}
                       onToggleFavorite={
                         token

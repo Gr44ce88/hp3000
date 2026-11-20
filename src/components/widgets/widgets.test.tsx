@@ -63,7 +63,10 @@ describe('ProfileChip', () => {
     await user.click(screen.getByRole('button', { name: /Аня/ }))
     const menu = screen.getByRole('menu')
 
-    expect(within(menu).getByRole('menuitem', { name: 'Редактировать' })).toBeInTheDocument()
+    expect(within(menu).getByRole('menuitem', { name: 'Мой профиль' })).toHaveAttribute(
+      'href',
+      '/profile',
+    )
     expect(within(menu).getByRole('menuitem', { name: 'Избранное' })).toBeInTheDocument()
   })
 

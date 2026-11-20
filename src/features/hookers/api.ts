@@ -5,6 +5,7 @@ function toQuery(params: HookerListParams): string {
   const search = new URLSearchParams()
   if (params.q) search.set('q', params.q)
   if (params.city) search.set('city', params.city)
+  if (params.district) search.set('district', params.district)
   if (params.service) search.set('service', params.service)
   if (params.minPrice) search.set('minPrice', String(params.minPrice))
   if (params.maxPrice) search.set('maxPrice', String(params.maxPrice))

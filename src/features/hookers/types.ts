@@ -34,6 +34,7 @@ export type Review = {
 export type HookerListParams = {
   q?: string
   city?: string
+  district?: string
   service?: string
   minPrice?: number
   maxPrice?: number

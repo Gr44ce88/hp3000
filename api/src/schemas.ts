@@ -68,6 +68,7 @@ export const reviewSchema = z.object({
 export const listQuerySchema = z.object({
   q: z.string().trim().max(60).optional(),
   city: z.string().trim().optional(),
+  district: z.string().trim().max(60).optional(),
   service: z.string().trim().max(60).optional(),
   ids: z.string().optional(),
   minPrice: z.coerce.number().int().min(0).optional(),

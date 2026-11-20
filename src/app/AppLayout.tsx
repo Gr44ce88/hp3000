@@ -50,8 +50,8 @@ export function AppLayout() {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:py-0">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:h-14 sm:gap-x-3 sm:px-4 sm:py-0">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <NavLink
               to="/"
               className="flex shrink-0 items-center gap-2 font-semibold text-content"
@@ -59,7 +59,7 @@ export function AppLayout() {
               <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
                 <Sparkles className="size-3.5" aria-hidden="true" />
               </span>
-              <span className="text-[13px]">hp3k</span>
+              <span className="hidden text-[13px] sm:inline">hp3k</span>
             </NavLink>
 
             <nav className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
@@ -68,6 +68,8 @@ export function AppLayout() {
                   key={item.to}
                   to={item.to}
                   end={'end' in item ? item.end : undefined}
+                  aria-label={item.label}
+                  title={item.label}
                   className={({ isActive }) =>
                     cn(
                       'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
@@ -76,7 +78,7 @@ export function AppLayout() {
                   }
                 >
                   <item.icon className="size-3.5" aria-hidden="true" />
-                  {item.label}
+                  <span className="hidden sm:inline">{item.label}</span>
                 </NavLink>
               ))}
             </nav>
@@ -95,10 +97,12 @@ export function AppLayout() {
 
             <Link
               to="/hookers/new"
+              aria-label="Создать анкету"
+              title="Создать анкету"
               className="inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
             >
               <Plus className="size-3.5" aria-hidden="true" />
-              Создать анкету
+              <span className="hidden sm:inline">Создать анкету</span>
             </Link>
 
             {user ? (
