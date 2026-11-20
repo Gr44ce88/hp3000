@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import {
   ArrowUpDown,
@@ -63,6 +63,7 @@ export default function HomePage() {
   const hasActive =
     filters.length > 0 || Boolean(service) || Boolean(city) || Boolean(district) || Boolean(minPrice) || Boolean(maxPrice)
 
+  const loadMoreRef = useRef<HTMLDivElement>(null)
   const [search, setSearch] = useState(query)
 
   const token = useSessionStore((state) => state.token)
@@ -137,6 +138,22 @@ export default function HomePage() {
   })
 
   const pages = list.data?.pages ?? []
+
+  // Бесконечная прокрутка: маркер внизу списка подходит к экрану — тянем следующую страницу.
+  useEffect(() => {
+    const marker = loadMoreRef.current
+    if (!marker || !list.hasNextPage || list.isFetchingNextPage) return
+    if (typeof IntersectionObserver === 'undefined') return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void list.fetchNextPage()
+      },
+      { rootMargin: '600px 0px' },
+    )
+    observer.observe(marker)
+    return () => observer.disconnect()
+  }, [list, list.hasNextPage, list.isFetchingNextPage, list.fetchNextPage, pages.length])
   const favoritesReady = !onlyFavorites || favoritesQuery.isSuccess
   // Пустое избранное: запрос не нужен, а старые данные мешать не должны.
   const favoritesEmpty = onlyFavorites && favoritesQuery.isSuccess && favorites.length === 0
@@ -527,10 +544,23 @@ export default function HomePage() {
                 ))}
               </ul>
 
+              {/* Маркер: подходит к экрану — догружаем следующую страницу сами. */}
+              <div ref={loadMoreRef} aria-hidden="true" className="h-px w-full" />
+
               <div className="flex flex-col items-center gap-2 py-8">
+                {list.isFetchingNextPage && (
+                  <span className="inline-flex items-center gap-2 text-[11px] text-content-muted">
+                    <span
+                      aria-hidden="true"
+                      className="size-3.5 rounded-full border-2 border-brand-500 border-t-transparent motion-safe:animate-spin"
+                    />
+                    Загружаем ещё
+                  </span>
+                )}
                 {list.hasNextPage && (
                   <Button
                     size="sm"
+                    variant="ghost"
                     isLoading={list.isFetchingNextPage}
                     onClick={() => void list.fetchNextPage()}
                   >

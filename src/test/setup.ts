@@ -12,7 +12,23 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
-// jsdom не реализует matchMedia — нужен для темы
+// jsdom не реализует IntersectionObserver — нужен для автодогрузки каталога
+if (!window.IntersectionObserver) {
+  class NoopObserver implements IntersectionObserver {
+    readonly root = null
+    readonly rootMargin = ''
+    readonly scrollMargin = ''
+    readonly thresholds: readonly number[] = []
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
+  }
+  window.IntersectionObserver = NoopObserver as unknown as typeof IntersectionObserver
+}
+
 if (!window.matchMedia) {
   window.matchMedia = ((query: string) => ({
     matches: false,
