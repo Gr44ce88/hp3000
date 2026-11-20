@@ -27,6 +27,7 @@ export const meSchema = z.object({
   name: z.string().trim().min(2, 'Имя: от 2 до 60 символов').max(60, 'Имя: от 2 до 60 символов'),
   email,
   phone: phone.or(z.literal('')).optional(),
+  avatarUrl: z.string().trim().max(300, 'Слишком длинный адрес фото').optional(),
 })
 
 export const listingSchema = z.object({

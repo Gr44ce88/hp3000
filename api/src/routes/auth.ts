@@ -96,6 +96,7 @@ authRouter.patch(
       name: req.body?.name ?? user.name,
       email: req.body?.email ?? user.email,
       phone: req.body?.phone ?? user.phone,
+      avatarUrl: req.body?.avatarUrl ?? user.avatar_url,
     })
 
     const taken = await one<{ id: string }>(
@@ -105,10 +106,10 @@ authRouter.patch(
     if (taken) throw conflict('Адрес занят другим аккаунтом')
 
     const rows = await query<UserRow>(
-      `update users set name = $2, email = $3, phone = $4
+      `update users set name = $2, email = $3, phone = $4, avatar_url = $5
        where id = $1
        returning id, email, name, phone, avatar_url`,
-      [user.id, input.name, input.email, input.phone ?? ''],
+      [user.id, input.name, input.email, input.phone ?? '', input.avatarUrl ?? ''],
     )
     res.json({ user: publicUser(rows[0]!) })
   }),

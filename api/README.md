@@ -60,7 +60,7 @@ api/
 | `POST /api/auth/demo` | все | сессия демо-аккаунта |
 | `POST /api/auth/logout` | все | гасит текущую сессию |
 | `GET /api/me` | сессия | текущий пользователь |
-| `PATCH /api/me` | сессия | имя, e-mail, телефон |
+| `PATCH /api/me` | сессия | имя, e-mail, телефон, `avatarUrl` (ссылка из `/uploads`) |
 | `GET /api/me/hookers` | сессия | свои анкеты |
 | `GET /api/me/reviews` | сессия | свои отзывы |
 | `GET /api/me/history` | сессия | просмотренные анкеты |

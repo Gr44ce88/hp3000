@@ -52,14 +52,23 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
-            <UserRound className="size-5 text-brand-600" aria-hidden="true" />
-            Мой профиль
-          </h1>
-          <p className="mt-0.5 text-xs text-content-muted">
-            {user?.name} · {user?.email}
-          </p>
+        <div className="flex items-center gap-3">
+          <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-mat text-base font-medium text-content-muted">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Аватар" className="size-full object-cover" />
+            ) : (
+              (user?.name ?? '?').slice(0, 1).toUpperCase()
+            )}
+          </span>
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
+              <UserRound className="size-5 text-brand-600" aria-hidden="true" />
+              Мой профиль
+            </h1>
+            <p className="mt-0.5 text-xs text-content-muted">
+              {user?.name} · {user?.email}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link

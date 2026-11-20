@@ -50,7 +50,9 @@ expect 401 "$(call POST /auth/login "{\"email\":\"$EMAIL\",\"password\":\"wrong1
 expect 200 "$(call POST /auth/login "{\"email\":\"$EMAIL\",\"password\":\"smoke12345\"}")" 'логин'
 expect 200 "$(call GET /me '' "$TOKEN")" 'текущий пользователь'
 expect 401 "$(call GET /me)" 'me без токена'
-expect 200 "$(call PATCH /me '{"name":"Смоук 2","email":"'"$EMAIL"'"}' "$TOKEN")" 'правка профиля'
+expect 200 "$(call PATCH /me '{"name":"Смоук 2","email":"'$EMAIL'"}' "$TOKEN")" 'правка профиля'
+expect 200 "$(call PATCH /me '{"avatarUrl":"/uploads/avatar.png"}' "$TOKEN")" 'загрузка аватара в профиль'
+expect 422 "$(call PATCH /me '{"avatarUrl":"'"$(printf 'a%.0s' $(seq 1 320))"'"}' "$TOKEN")" 'слишком длинный адрес аватара'
 
 expect 422 "$(call POST /hookers '{"name":"А","age":12}' "$TOKEN")" 'валидация анкеты'
 expect 201 "$(call POST /hookers '{"name":"Тестовая","age":25,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-01","height":170,"pricePerHour":3000,"services":["Классика"],"about":"Смоук-анкета"}' "$TOKEN")" 'создание анкеты'

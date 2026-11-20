@@ -242,7 +242,7 @@ export default function HomePage() {
         <Popover
           label="Фильтры"
           icon={<SlidersHorizontal className="size-3.5" aria-hidden="true" />}
-          count={filters.length + (service ? 1 : 0)}
+          count={filters.length + (service ? 1 : 0) + (minPrice || maxPrice ? 1 : 0)}
         >
           {() => (
             <div className="space-y-3">
@@ -264,6 +264,31 @@ export default function HomePage() {
                     {option.label}
                   </button>
                 ))}
+              </div>
+
+              <div className="border-t border-hairline pt-2">
+                <p className="mb-1.5 flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+                  <Banknote className="size-3" aria-hidden="true" />
+                  Цена, ₽
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={minPrice}
+                    onChange={(event) => update({ min: event.target.value.replace(/\D/g, '') })}
+                    placeholder="от"
+                    aria-label="Цена от"
+                    inputMode="numeric"
+                    className="h-8 text-xs sm:text-xs"
+                  />
+                  <Input
+                    value={maxPrice}
+                    onChange={(event) => update({ max: event.target.value.replace(/\D/g, '') })}
+                    placeholder="до"
+                    aria-label="Цена до"
+                    inputMode="numeric"
+                    className="h-8 text-xs sm:text-xs"
+                  />
+                </div>
               </div>
 
               <div className="border-t border-hairline pt-2">
@@ -335,33 +360,6 @@ export default function HomePage() {
                   {item}
                 </PopoverOption>
               ))}
-            </div>
-          )}
-        </Popover>
-
-        <Popover
-          label="Цена"
-          icon={<Banknote className="size-3.5" aria-hidden="true" />}
-          count={minPrice || maxPrice ? 1 : 0}
-        >
-          {() => (
-            <div className="flex gap-2">
-              <Input
-                value={minPrice}
-                onChange={(event) => update({ min: event.target.value.replace(/\D/g, '') })}
-                placeholder="от ₽"
-                aria-label="Цена от"
-                inputMode="numeric"
-                className="h-8 text-xs sm:text-xs"
-              />
-              <Input
-                value={maxPrice}
-                onChange={(event) => update({ max: event.target.value.replace(/\D/g, '') })}
-                placeholder="до ₽"
-                aria-label="Цена до"
-                inputMode="numeric"
-                className="h-8 text-xs sm:text-xs"
-              />
             </div>
           )}
         </Popover>

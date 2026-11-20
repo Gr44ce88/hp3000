@@ -23,7 +23,11 @@ export async function fetchMe(): Promise<SessionUser> {
   return data.user
 }
 
-export async function updateMe(input: { name: string; email: string }): Promise<SessionUser> {
+export async function updateMe(input: {
+  name: string
+  email: string
+  avatarUrl?: string
+}): Promise<SessionUser> {
   const { data } = await apiClient.patch<{ user: SessionUser }>('/me', input)
   return data.user
 }

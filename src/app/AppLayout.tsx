@@ -105,6 +105,7 @@ export function AppLayout() {
               <ProfileChip
                 variant="own"
                 name={user.name}
+                avatarUrl={user.avatarUrl}
                 onLogout={() => {
                   clear()
                   navigate('/auth', { replace: true })
