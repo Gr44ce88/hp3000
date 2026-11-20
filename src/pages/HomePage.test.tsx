@@ -24,6 +24,8 @@ describe('HomePage', () => {
     renderWithProviders(<HomePage />)
 
     await screen.findByText(/Первый контакт/)
+    // панель фильтров на телефоне свёрнута — раскрываем
+    await user.click(screen.getByRole('button', { name: 'Фильтры и сортировка' }))
     await user.click(screen.getByRole('button', { name: 'Избранное' }))
 
     expect(await screen.findByText('В избранном пусто')).toBeInTheDocument()
@@ -69,10 +71,12 @@ describe('HomePage', () => {
     renderWithProviders(<HomePage />)
     await screen.findByText(/Первый контакт/)
 
-    const filter = screen.getByRole('button', { name: 'С фото' })
+    const filter = screen.getByRole('button', { name: 'Фильтры и сортировка' })
     await user.click(filter)
+    const photoFilter = screen.getByRole('button', { name: 'С фото' })
+    await user.click(photoFilter)
 
-    expect(filter).toHaveAttribute('aria-pressed', 'true')
+    expect(photoFilter).toHaveAttribute('aria-pressed', 'true')
     // у фикстур нет фото — честное пустое состояние вместо всего каталога
     expect(await screen.findByText('Под условия ничего не подошло')).toBeInTheDocument()
   })

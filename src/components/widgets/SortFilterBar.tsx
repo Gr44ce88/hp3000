@@ -16,6 +16,10 @@ export type SortFilterBarProps = {
   availableFilters?: readonly FilterKey[]
   /** вертикальная раскладка для сайдбара */
   vertical?: boolean
+  /** не показывать блок сортировки (когда рядом свой селект) */
+  hideSort?: boolean
+  /** не показывать «Сбросить» (когда сброс живёт в общей панели) */
+  hideReset?: boolean
   onReset?: () => void
   resultCount?: number
   className?: string
@@ -36,6 +40,8 @@ export function SortFilterBar({
   onServiceChange,
   availableFilters,
   vertical = false,
+  hideSort = false,
+  hideReset = false,
   onReset,
   resultCount,
   className,
@@ -44,25 +50,29 @@ export function SortFilterBar({
 
   return (
     <div className={cn(vertical ? 'space-y-4' : 'flex flex-wrap items-center gap-x-3 gap-y-2', className)}>
-      <span id="sort-label" className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
-        <ArrowUpDown className="size-3" aria-hidden="true" />
-        Сортировка
-      </span>
-      <div role="group" aria-labelledby="sort-label" className={cn('flex gap-1.5', vertical ? 'flex-col items-start' : 'flex-wrap')}>
-        {SORT_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={sort === option.value}
-            onClick={() => onSortChange(option.value)}
-            className={cn(pill, sort === option.value ? pillActive : pillIdle)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
+      {!hideSort && (
+        <>
+          <span id="sort-label" className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
+            <ArrowUpDown className="size-3" aria-hidden="true" />
+            Сортировка
+          </span>
+          <div role="group" aria-labelledby="sort-label" className={cn('flex gap-1.5', vertical ? 'flex-col items-start' : 'flex-wrap')}>
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={sort === option.value}
+                onClick={() => onSortChange(option.value)}
+                className={cn(pill, sort === option.value ? pillActive : pillIdle)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
 
-      {!vertical && <span aria-hidden="true" className="mx-1 hidden h-4 w-px bg-hairline sm:block" />}
+          {!vertical && <span aria-hidden="true" className="mx-1 hidden h-4 w-px bg-hairline sm:block" />}
+        </>
+      )}
       <span className="flex items-center gap-1 text-[11px] tracking-wide text-content-muted uppercase">
         <SlidersHorizontal className="size-3" aria-hidden="true" />
         Фильтры
@@ -115,7 +125,7 @@ export function SortFilterBar({
         </>
       )}
 
-      {hasActive && (
+      {hasActive && !hideReset && (
         <button
           type="button"
           onClick={onReset}

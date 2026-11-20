@@ -18,7 +18,7 @@ import {
 import { Popover, PopoverOption } from '@/components/ui/Popover'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
-import { SortFilterBar } from '@/components/widgets/SortFilterBar'
+import { MobileFilterPanel } from '@/components/widgets/MobileFilterPanel'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
@@ -400,59 +400,26 @@ export default function HomePage() {
       </div>
 
       <div className="mt-3">
-        <aside className="space-y-3 sm:hidden">
-          <div className="sticky top-[3.5rem] space-y-3">
-            <select
-              value={city}
-              onChange={(event) => update({ city: event.target.value })}
-              aria-label="Город"
-              className="h-8 w-full rounded-md bg-chip px-2 text-xs text-content focus:outline-none"
-            >
-              <option value="">Все города</option>
-              {(list.data?.pages[0]?.cities ?? []).map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <div className="flex gap-2">
-              <Input
-                value={minPrice}
-                onChange={(event) => update({ min: event.target.value.replace(/\D/g, '') })}
-                placeholder="от ₽"
-                aria-label="Цена от"
-                inputMode="numeric"
-                className="h-8 text-xs sm:text-xs"
-              />
-              <Input
-                value={maxPrice}
-                onChange={(event) => update({ max: event.target.value.replace(/\D/g, '') })}
-                placeholder="до ₽"
-                aria-label="Цена до"
-                inputMode="numeric"
-                className="h-8 text-xs sm:text-xs"
-              />
-            </div>
-
-            <SortFilterBar
-              vertical
-              sort={sort}
-              onSortChange={(value) => update({ sort: value })}
-              activeFilters={filters}
-              availableFilters={token ? undefined : FILTER_OUTSIDE_AUTH}
-              onToggleFilter={toggleFilter}
-              service={service}
-              onServiceChange={(value) => update({ service: value })}
-              onReset={resetAll}
-            />
-
-            <Button size="sm" variant="ghost" onClick={resetAll}>
-              <RotateCcw className="size-3.5" aria-hidden="true" />
-              Сбросить всё
-            </Button>
-          </div>
-        </aside>
+        <MobileFilterPanel
+          className="sm:hidden"
+          sort={sort}
+          onSortChange={(value) => update({ sort: value })}
+          city={city}
+          cities={list.data?.pages[0]?.cities ?? []}
+          onCityChange={(value) => update({ city: value, district: '' })}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onMinPriceChange={(value) => update({ min: value })}
+          onMaxPriceChange={(value) => update({ max: value })}
+          activeFilters={filters}
+          availableFilters={token ? undefined : FILTER_OUTSIDE_AUTH}
+          onToggleFilter={toggleFilter}
+          service={service}
+          onServiceChange={(value) => update({ service: value })}
+          onReset={resetAll}
+          resultCount={total}
+          count={filters.length + (service ? 1 : 0) + (minPrice || maxPrice ? 1 : 0) + (city ? 1 : 0)}
+        />
 
         <div className="mt-4 min-w-0 sm:mt-0">
           {list.isPending && (
