@@ -34,7 +34,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
+    <div className="page-sheet mx-auto max-w-md">
       <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
         {mode === 'login' ? (
           <LogIn className="size-5 text-brand-600" aria-hidden="true" />

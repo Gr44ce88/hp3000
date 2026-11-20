@@ -45,6 +45,7 @@ export function SimilarHookers({
               name={item.name}
               age={item.age}
               city={item.city}
+              district={item.district}
               pricePerHour={item.pricePerHour}
               height={item.height}
               photoUrl={item.mainPhoto || item.photos[0]}

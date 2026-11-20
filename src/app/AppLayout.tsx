@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLayoutEffect, useRef } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import {
   Flame,
   Heart,
@@ -7,7 +7,7 @@ import {
   LogIn,
   Moon,
   Plus,
-  Sparkles,
+  MapPin,
   Sun,
   UserRound,
 } from 'lucide-react'
@@ -23,22 +23,28 @@ const YEAR = new Date().getFullYear()
 
 const navItems = [
   { to: '/', label: 'Анкеты', icon: LayoutGrid, end: true },
-  { to: '/map', label: 'Карта', icon: Flame },
+  { to: '/map', label: 'Карта', icon: MapPin },
+  { to: '/favorites', label: 'Избранное', icon: Heart },
 ] as const
 
 export function AppLayout() {
   const { isDark, toggle } = useTheme()
   const { pathname } = useLocation()
+  const navigationType = useNavigationType()
+  const lastPath = useRef<string | null>(null)
   const user = useSessionStore((state) => state.user)
   const clear = useSessionStore((state) => state.clear)
   const navigate = useNavigate()
   const mainRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (lastPath.current === pathname) return
+    lastPath.current = pathname
+    if (navigationType !== 'POP') window.scrollTo(0, 0)
     const title = titleFor(pathname)
-    document.title = title ? `${title} · hp3k` : 'Страница не найдена · hp3k'
-    mainRef.current?.focus()
-  }, [pathname])
+    document.title = title ? `${title} · hp3000` : 'Страница не найдена · hp3000'
+    mainRef.current?.focus({preventScroll: true})
+  }, [pathname, navigationType])
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -49,20 +55,17 @@ export function AppLayout() {
         К содержанию
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
+      <header className="app-header sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:h-14 sm:gap-x-3 sm:px-4 sm:py-0">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <NavLink
               to="/"
               className="flex shrink-0 items-center gap-2 font-semibold text-content"
             >
-              <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
-                <Sparkles className="size-3.5" aria-hidden="true" />
-              </span>
-              <span className="hidden text-[13px] sm:inline">hp3k</span>
+              <span className="wordmark">hp<span>3000</span></span>
             </NavLink>
 
-            <nav className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
+            <nav aria-label="Основная навигация" className="main-nav -mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -116,14 +119,14 @@ export function AppLayout() {
                 }}
               />
             ) : (
-              <ProfileChip variant="anonymous" />
+              <Link to="/auth" className="signin">Войти</Link>
             )}
 
           </div>
         </div>
       </header>
 
-      <main
+      <main data-page={pathname.split('/').filter(Boolean)[0] || 'catalog'}
         id="main"
         ref={mainRef}
         tabIndex={-1}
@@ -172,7 +175,7 @@ export function AppLayout() {
             )}
           </Link>
         </nav>
-        <p className="mt-3 text-center text-[11px] text-content-muted">hp3k · {YEAR}</p>
+        <p className="mt-3 text-center text-[11px] text-content-muted">hp3000 · {YEAR}</p>
       </footer>
     </div>
   )

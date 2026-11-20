@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import {
@@ -33,6 +33,10 @@ import { cn } from '@/lib/cn'
 const money = new Intl.NumberFormat('ru-RU')
 
 export default function HookerDetailPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const source = location.state?.catalogUrl
+  const catalogUrl = typeof source === 'string' && /^(?:\/|\/hookers)(?:\?|$)/.test(source) ? source : '/'
   const { id = '' } = useParams()
   const { token, user } = useSession()
   const favoritesQuery = useFavoriteIds()
@@ -118,7 +122,7 @@ export default function HookerDetailPage() {
         <p className="text-sm font-medium text-content">Анкета не найдена</p>
         <p className="mt-1 text-xs text-content-muted">Возможно, её сняли с публикации.</p>
         <Link
-          to="/"
+          to={catalogUrl}
           className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
         >
           К каталогу
@@ -135,8 +139,14 @@ export default function HookerDetailPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <Link
-        to="/"
-        className="inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
+        to={catalogUrl}
+        onClick={(event) => {
+          if (source === catalogUrl && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+            event.preventDefault()
+            navigate(-1)
+          }
+        }}
+        className="back-link inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
       >
         <ArrowLeft className="size-3" aria-hidden="true" />
         Каталог
@@ -168,7 +178,7 @@ export default function HookerDetailPage() {
                 </Button>
               )
             })}
-            <Button
+            {import.meta.env.DEV && <Button
               size="sm"
               variant="ghost"
               disabled={testPay.isPending}
@@ -176,13 +186,13 @@ export default function HookerDetailPage() {
             >
               <Check className="size-3.5" aria-hidden="true" />
               Подтвердить тестом
-            </Button>
+            </Button>}
           </div>
           {publishError && <p className="mt-2 text-[11px] text-danger">{publishError}</p>}
         </div>
       )}
 
-      <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="detail-overview mt-3 grid gap-6 lg:grid-cols-[1fr_1fr]">
         <PhotoGallery photos={item.photos} mainPhoto={item.mainPhoto} alt={item.name} />
 
         <div>
@@ -199,7 +209,7 @@ export default function HookerDetailPage() {
             </div>
             <button
               type="button"
-              onClick={() => toggleFavoriteMutation.mutate({ id: item.id, favorite })}
+              onClick={() => token ? toggleFavoriteMutation.mutate({ id: item.id, favorite }) : navigate('/auth', { state: { from: location.pathname } })}
               aria-pressed={favorite}
               className="grid size-8 shrink-0 place-items-center rounded-full bg-chip text-sm transition-colors hover:bg-content/10"
               aria-label={favorite ? 'Убрать из избранного' : 'В избранное'}

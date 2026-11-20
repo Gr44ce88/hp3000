@@ -37,7 +37,7 @@ export default function NewHookerPage() {
   })
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="page-sheet mx-auto max-w-2xl">
       <h1 className="text-xl font-medium tracking-tight text-content">Новая анкета</h1>
       <p className="mt-1 text-xs text-content-muted">
         Публикация платная — {PUBLICATION_COMMISSION} {COMMISSION_CURRENCY}, анкета появляется в

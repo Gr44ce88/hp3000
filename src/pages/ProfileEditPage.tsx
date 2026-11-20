@@ -58,7 +58,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="page-sheet mx-auto max-w-lg">
       <Link
         to="/profile"
         className="inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"

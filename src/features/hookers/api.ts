@@ -42,6 +42,7 @@ export type ListingPayload = {
   name: string
   age: number
   city: string
+  district?: string
   region: string
   phone: string
   height: number
@@ -59,6 +60,7 @@ export function toListingBody(input: ListingPayload) {
     name: input.name,
     age: Number(input.age),
     city: input.city,
+    district: input.district,
     region: input.region,
     phone: input.phone,
     height: Number(input.height),

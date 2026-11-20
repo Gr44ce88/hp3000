@@ -153,6 +153,10 @@ export function HookerForm({
         />
       </Field>
 
+      <Field label="Район" htmlFor="district" error={errors.district?.message}>
+        <Input id="district" placeholder="Например, Пресня" maxLength={60} {...register('district')} />
+      </Field>
+
       <Field label="Регион" htmlFor="region" required error={errors.region?.message}>
         <Input
           id="region"
@@ -349,7 +353,7 @@ export function HookerForm({
             })}
           </div>
           <p className="mt-2 text-[11px] text-content-muted">
-            Заглушка: реальное списание подключим позже.
+            После создания анкеты откроется оплата публикации.
           </p>
         </fieldset>
       )}

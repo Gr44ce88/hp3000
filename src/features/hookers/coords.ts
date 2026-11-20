@@ -29,7 +29,7 @@ export const CITY_COORDS: Record<string, Coords> = {
 /** Точка на карте: район или город, если района нет в справочнике. */
 export function coordsFor(district: string, city: string): { coords: Coords; exact: boolean } {
   const districtCoords = DISTRICT_COORDS[district]
-  if (districtCoords) return { coords: districtCoords, exact: true }
+  if (districtCoords && city === 'Москва') return { coords: districtCoords, exact: true }
   const cityCoords = CITY_COORDS[city]
   if (cityCoords) return { coords: cityCoords, exact: false }
   return { coords: CITY_COORDS['Москва']!, exact: false }

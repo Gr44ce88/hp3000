@@ -48,7 +48,7 @@ export default function EditHookerPage() {
   const item = hooker.data
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="page-sheet mx-auto max-w-2xl">
       <h1 className="text-xl font-medium tracking-tight text-content">Редактирование</h1>
       <p className="mt-1 text-xs text-content-muted">Повторная оплата не нужна.</p>
       <div className="mt-5">
@@ -61,6 +61,7 @@ export default function EditHookerPage() {
             name: item.name,
             age: item.age,
             height: item.height,
+            district: item.district,
             city: item.city as City,
             region: item.region,
             phone: item.phone,

@@ -1,0 +1,29 @@
+[
+  {
+    "width": 360,
+    "taps": 1,
+    "textEntries": 0,
+    "returnScroll": [
+      2396,
+      2396
+    ]
+  },
+  {
+    "width": 390,
+    "taps": 1,
+    "textEntries": 0,
+    "returnScroll": [
+      2498,
+      2498
+    ]
+  },
+  {
+    "width": 1440,
+    "taps": 1,
+    "textEntries": 0,
+    "returnScroll": [
+      1844,
+      1844
+    ]
+  }
+]

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>hp3000 · Сравнение до и после</title>
+<style>
+:root{font:16px/1.55 system-ui,sans-serif;color:#381d29;background:#fbf6f4}body{max-width:1240px;margin:auto;padding:clamp(12px,3vw,40px)}header{border-bottom:1px solid #ddcbd1;padding-bottom:16px}h1,h2{font-family:Georgia,serif;line-height:1.1;letter-spacing:-.035em}h1{font-size:clamp(36px,6vw,70px);margin:15px 0}h2{font-size:30px;margin:32px 0 12px}select{font:inherit;padding:8px;border:1px solid #a68b95;background:white;border-radius:8px}label{display:inline-grid;gap:3px;margin:0 10px 12px 0}figure{margin:0;min-width:0}figcaption{font-weight:650;padding:5px}.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}img{display:block;width:100%;height:auto;border:1px solid #ddcbd1;border-radius:8px;box-sizing:border-box}.pair.mobile img{max-width:390px}a{color:#7d173d;text-underline-offset:3px}.notes{max-width:78ch}td,th{border-bottom:1px solid #ddcbd1;padding:8px;text-align:left}table{border-collapse:collapse}summary{cursor:pointer;font-weight:600}details{margin:16px 0}@media(max-width:650px){.pair:not(.mobile){grid-template-columns:1fr}}
+</style>
+<header><h1>hp3000 до и после</h1><p>Открытие анкеты на Пресне в пределах 3 000 ₽ за час сократилось с двух нажатий до одного.</p></header>
+<main>
+<h2>Экраны</h2>
+<label>Экран<select id="screen">
+<option value="catalog">Каталог</option><option value="map">Карта районов</option><option value="detail">Анкета</option><option value="favorites">Избранное</option><option value="auth">Вход</option><option value="profile">Профиль</option><option value="new">Создание</option><option value="edit">Редактирование</option><option value="guest-360">Каталог · 360 px, гость</option><option value="guest-390">Каталог · 390 px, гость</option><option value="guest-1440">Каталог · 1440 px, гость</option>
+</select></label>
+<label>Тема<select id="theme"><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label>
+<div class="pair" id="pair"><figure><figcaption>До</figcaption><a><img alt="Исходный экран"></a></figure><figure><figcaption>После</figcaption><a><img alt="Обновлённый экран"></a></figure></div>
+<div class="notes">
+<h2>A. Восемь экранов в двух темах</h2>
+<p>Каждая пара снята на одном экземпляре PostgreSQL. Анкеты и цены совпадают. На карте при недоступности Яндекса теперь видны схема по координатам и список районов. Выбор района учитывает город.</p>
+<h2>B. Кратчайший путь</h2>
+<table><thead><tr><th>Версия</th><th>Действия</th><th>Нажатия</th></tr></thead><tbody><tr><th>До</th><td>Нажать поиск. Ввести «Пресня». Найти в результатах цену 500 ₽/час и открыть Риту.</td><td>2</td></tr><tr><th>После</th><td>Проверить район «Пресня» и цену 500 ₽/час на карточке Риты. Открыть анкету.</td><td>1</td></tr></tbody></table>
+<p>Текстовый ввод считался отдельно: один раз до, ноль после. Скролл и обратный путь исключены из обоих измерений. Результат относится к выбранной задаче на фиксированных данных. Бюджет и район также можно задать явно.</p>
+<p>До изменений измерен dev-стенд с автоматическим демовходом. Для гостя обе версии отдельно проверены на неизменённом исходном коммите и в рабочей ветке с отключённым демовходом. На всех трёх ширинах результат совпал.</p>
+<h2>C. Телефон и компьютер</h2>
+<table><thead><tr><th>Окно, CSS px</th><th>Нажатия до → после</th><th>Прокрутка до открытия → после возврата</th></tr></thead>
+<tbody><tr><td>360 × 844</td><td>2 → 1</td><td>2396 → 2396 px</td></tr><tr><td>390 × 844</td><td>2 → 1</td><td>2498 → 2498 px</td></tr><tr><td>1440 × 900</td><td>2 → 1</td><td>1844 → 1844 px</td></tr></tbody></table>
+<p>Позиция проверена в отфильтрованном списке после догрузки второй страницы. Проверены возврат «Каталог», браузерная кнопка «Назад», перезагрузка, новая вкладка, закрытие панели и фокус после Esc. В браузерной эмуляции высота окна уменьшалась до 470 px, ввод завершался клавишей Enter. Нативную экранную клавиатуру на физическом телефоне предстоит проверить.</p>
+<h2>D. Функциональный прогон</h2>
+<p>На реальном локальном API и PostgreSQL выполнены вход через форму, добавление Риты в избранное, повторное открытие после перезагрузки, создание скрытой анкеты на Соколе, редактирование цены с 3150 до 3250 ₽ и штатное тестовое подтверждение оплаты. Независимый запрос гостя подтвердил публикацию и сохранённые значения. Созданная для прогона запись удалена. Сборка и линтер прошли, 20 тестов прошли. Полный api:smoke также прошёл на изолированном API с тестовыми ключами FreeKassa.</p>
+<p><a href="functional/favorite.webp">Избранное после перезагрузки</a> · <a href="functional/published.webp">После тестовой публикации</a></p>
+<p>Опубликованное превью использует снимок этих 72 анкет и хранит изменения в браузере участника. Для входа предусмотрен демонстрационный аккаунт. В превью подтверждение тестовое, внешняя платёжная форма не вызывается.</p>
+<h2>E. Тест с новичками</h2>
+<p>Ожидаются пять реальных участников. Результатов пока нет. Для зачёта минимум четверо должны самостоятельно выполнить обе задачи. Павел передаёт участникам только ссылку на главную превью и задания по одному.</p>
+<ol><li>Найдите и откройте анкету на Пресне до 3 000 ₽ за час. Назовите имя и цену.</li><li>Получите ссылку на подборку в районе Сокол с бюджетом до 4 000 ₽ за час. Откройте её в новой вкладке и проверьте, что условия сохранились.</li></ol>
+<p>Запись по каждому участнику: код P1–P5, ширина экрана, исход каждой задачи без подсказки и место затруднения.</p>
+<details><summary>Условия и журналы</summary><p>Исходный коммит 20b5d23. Штатный seed 20261119, 72 опубликованные анкеты. Обе версии использовали один экземпляр БД. Исходный URL в первом замере — http://127.0.0.1:5173/.</p>
+<a href="before/measure.json">Первый замер</a> · <a href="after/measure.json">Повторный замер</a> · <a href="before/guest.json">Гость до</a> · <a href="after/guest.json">Гость после</a> · <a href="functional/result.json">Функциональный прогон</a></details>
+</div></main>
+<script>
+const screenSelect=document.querySelector('#screen'), theme=document.querySelector('#theme'), pair=document.querySelector('#pair')
+function show(){
+ const guest=screenSelect.value.startsWith('guest-')
+ theme.disabled=guest
+ const name=guest?screenSelect.value:theme.value+'-'+screenSelect.value
+ pair.classList.toggle('mobile',guest && name!=='guest-1440')
+ ;['before','after'].forEach((stage,i)=>{const url=stage+'/'+name+'.webp';const a=pair.querySelectorAll('a')[i];a.href=url;a.querySelector('img').src=url})
+}
+screenSelect.onchange=theme.onchange=show;show()
+</script></html>

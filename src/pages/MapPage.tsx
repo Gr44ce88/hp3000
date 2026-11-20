@@ -21,8 +21,8 @@ export default function MapPage() {
   const items = stats.data ?? []
   const busiest = items[0]
 
-  const pick = useCallback((district: string) => {
-    navigate(`/hookers?q=${encodeURIComponent(district)}`)
+  const pick = useCallback((district: string, city: string) => {
+    navigate(`/?${new URLSearchParams({ city, district })}`)
   }, [navigate])
 
   return (
@@ -32,16 +32,13 @@ export default function MapPage() {
         Карта
       </h1>
       <p className="mt-0.5 text-[11px] text-content-muted">
-        Анкеты по районам на Яндекс.Картах: пятна показывают плотность, клик по пятну открывает
-        этот район.
+        Выберите район на карте или в списке, чтобы открыть его анкеты.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_220px]">
         <div className="relative">
           <YandexMap points={items} hot={HOT} warm={WARM} onPick={pick} />
-          <span className="absolute top-2 right-2 rounded-full bg-black/45 px-2 py-0.5 text-[11px] text-white backdrop-blur">
-            слой плотности
-          </span>
+
         </div>
 
         <aside className="space-y-3 rounded-lg bg-surface-elevated p-3 ring-1 ring-hairline">
@@ -87,18 +84,18 @@ export default function MapPage() {
           ) : (
             <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {items.map((item) => (
-                <li key={item.district} className="rounded-lg bg-mat p-3 ring-1 ring-hairline">
+                <li key={item.city + item.district}><button type="button" onClick={() => pick(item.district, item.city)} className="district-tile">
                   <span
                     aria-hidden="true"
                     className={`mb-2 block h-1 rounded-full ${
                       item.count >= HOT ? 'bg-danger' : item.count >= WARM ? 'bg-rating' : 'bg-line'
                     }`}
                   />
-                  <p className="text-xs font-medium text-content">{item.district}</p>
+                  <p className="text-base font-medium text-content">{item.district}</p><p className="text-xs text-content-muted">{item.city}</p>
                   <p className="mt-1 text-[11px] text-content-muted tabular-nums">
                     {item.count} {item.count === 1 ? 'анкета' : 'анкет'}
                   </p>
-                </li>
+                </button></li>
               ))}
             </ul>
           )}

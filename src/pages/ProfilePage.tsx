@@ -50,7 +50,7 @@ export default function ProfilePage() {
   })
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="account-sheet mx-auto max-w-3xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-mat text-base font-medium text-content-muted">
