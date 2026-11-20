@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:covers": "tsx api/src/db/covers.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.5",

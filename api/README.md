@@ -64,7 +64,7 @@ api/
 | `GET /api/me/hookers` | сессия | свои анкеты |
 | `GET /api/me/reviews` | сессия | свои отзывы |
 | `GET /api/me/history` | сессия | просмотренные анкеты |
-| `GET /api/hookers` | все | каталог: `q`, `city`, `ids`, `minPrice`, `maxPrice`, `sort`, `page`, `limit` |
+| `GET /api/hookers` | все | каталог: `q`, `city`, `service`, `ids`, `minPrice`, `maxPrice`, `hasPhoto`, `reviewed`, `center`, `sort`, `page`, `limit` |
 | `GET /api/hookers/:id` | все | анкета |
 | `POST /api/hookers` | сессия | создать анкету |
 | `PATCH /api/hookers/:id` | владелец | изменить |

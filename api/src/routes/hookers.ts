@@ -81,6 +81,17 @@ hookersRouter.get(
       values.push(params.maxPrice)
       where.push(`h.price_per_hour <= $${values.length}`)
     }
+    if (params.hasPhoto) {
+      where.push(`(h.main_photo <> '' or coalesce(array_length(h.photos, 1), 0) > 0)`)
+    }
+    if (params.reviewed) {
+      where.push(`exists (select 1 from reviews rv where rv.hooker_id = h.id)`)
+    }
+    if (params.center) {
+      where.push(
+        `h.district = any(array['Пресня','Хамовники','Сити','Басманный','Центр','Таганский','Арбат','Тверской'])`,
+      )
+    }
 
     const clause = where.length > 0 ? `where ${where.join(' and ')}` : ''
     values.push(params.limit, (params.page - 1) * params.limit)
