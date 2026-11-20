@@ -73,7 +73,7 @@ export function HookerCard({
 
       {rating !== undefined && (
         <span className="absolute top-1.5 left-1.5 inline-flex h-5 items-center gap-1 rounded-full bg-black/45 px-1.5 text-[11px] font-medium text-white tabular-nums backdrop-blur">
-          <Star className="size-3 fill-peach text-peach" aria-hidden="true" />
+          <Star className="size-3 fill-rose text-rose" aria-hidden="true" />
           {rating.toFixed(1)}
           {reviewsCount !== undefined && (
             <span className="border-l border-white/30 pl-1.5 font-normal text-white/80 tabular-nums">

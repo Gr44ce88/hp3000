@@ -11,7 +11,7 @@ export function Textarea({ className, invalid, ...rest }: TextareaProps) {
       aria-invalid={invalid || undefined}
       className={cn(
         'min-h-24 w-full rounded-md border bg-surface-elevated px-3 py-2 text-base text-content sm:text-sm',
-        'placeholder:text-content-muted/70',
+        'placeholder:text-content-muted',
         'transition-colors focus:border-brand-500 focus:outline-none',
         invalid ? 'border-danger' : 'border-line',
         className,
