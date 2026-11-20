@@ -144,7 +144,7 @@ export function HookerCard({
 
       <p
         className={cn(
-          'font-medium text-content tabular-nums',
+          'font-semibold text-brand-600 tabular-nums',
           portrait ? 'mt-1 text-[13px]' : 'mt-auto pt-2 text-sm',
         )}
       >

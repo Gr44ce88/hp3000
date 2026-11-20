@@ -19,9 +19,11 @@ import { Popover, PopoverOption } from '@/components/ui/Popover'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { MobileFilterPanel } from '@/components/widgets/MobileFilterPanel'
+import { CardSkeleton } from '@/components/widgets/CardSkeleton'
+import { ScrollTopButton } from '@/components/widgets/ScrollTopButton'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Spinner } from '@/components/ui/Spinner'
+
 import { fetchHookers } from '@/features/hookers/api'
 import { DISTRICT_COORDS } from '@/features/hookers/coords'
 import { FILTER_OPTIONS, SORT_OPTIONS, type FilterKey, type SortKey } from '@/features/hookers/sorting'
@@ -424,7 +426,14 @@ export default function HomePage() {
         <div className="mt-4 min-w-0 sm:mt-0">
           {list.isPending && (
             <div className="mt-4">
-              <Spinner label="Загружаем анкеты" />
+              <span className="sr-only">Загружаем анкеты</span>
+              <ul className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <li key={index}>
+                    <CardSkeleton />
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -536,6 +545,8 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      <ScrollTopButton />
     </div>
   )
 }
