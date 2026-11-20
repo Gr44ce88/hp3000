@@ -109,8 +109,28 @@
   }
 
   #root {
+    position: relative;
+    z-index: 1;
     min-height: 100dvh;
     isolation: isolate;
+  }
+
+  /* Мягкие пятна на фоне: тайл из логотипного пятна, зеркальная мозаика без швов. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url('/pattern-blob-ink.png');
+    background-repeat: repeat;
+    background-size: 396px 352px;
+    opacity: 0.06;
+  }
+
+  .dark body::before {
+    background-image: url('/pattern-blob-light.png');
+    opacity: 0.08;
   }
 
   :focus-visible {
