@@ -1,8 +1,9 @@
 import { apiClient } from '@/lib/api/client'
 import type { Hooker, HookerListParams, HookerListResponse, Review } from './types'
 
-function toQuery(params: HookerListParams): string {
+export function toQuery(params: HookerListParams): string {
   const search = new URLSearchParams()
+  if (params.metro) search.set('metro', params.metro)
   if (params.q) search.set('q', params.q)
   if (params.city) search.set('city', params.city)
   if (params.district) search.set('district', params.district)
@@ -39,9 +40,13 @@ export async function fetchMyHookers(signal?: AbortSignal): Promise<Hooker[]> {
 }
 
 export type ListingPayload = {
+  showHouse?: boolean
+  telegram?: string
+  addressId?: string
   name: string
   age: number
   city: string
+  district?: string
   region: string
   phone: string
   height: number
@@ -56,9 +61,13 @@ export type ListingPayload = {
 
 export function toListingBody(input: ListingPayload) {
   return {
+    addressId: input.addressId,
+    showHouse: input.showHouse,
+    telegram: input.telegram,
     name: input.name,
     age: Number(input.age),
     city: input.city,
+    district: input.district,
     region: input.region,
     phone: input.phone,
     height: Number(input.height),

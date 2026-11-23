@@ -1,9 +1,12 @@
+import type { HouseAddress } from '../../src/features/geo/metro.ts'
+
 /** Представление анкеты в ответах API — ровно то, что ждёт клиент. */
 export type HookerView = {
   id: string
   name: string
   age: number
   city: string
+  address: HouseAddress | null
   district: string
   region: string
   phone: string
@@ -16,6 +19,11 @@ export type HookerView = {
   photos: string[]
   mainPhoto: string
   isNew: boolean
+  showHouse: boolean
+  metroIds: string[]
+  telegram: string
+  paused: boolean
+  confirmedAt: string | null
   isPublished: boolean
   createdAt: string
   ownerId: string | null
@@ -27,6 +35,7 @@ export type HookerRow = {
   name: string
   age: number
   city: string
+  address: HouseAddress | null
   district: string
   region: string
   phone: string
@@ -37,6 +46,10 @@ export type HookerRow = {
   photos: string[]
   main_photo: string
   is_new: boolean
+  show_house: boolean
+  telegram: string
+  paused: boolean
+  confirmed_at: Date | null
   is_published: boolean
   created_at: Date
   owner_id: string | null
@@ -45,7 +58,12 @@ export type HookerRow = {
 }
 
 /** Колонки с агрегатами: рейтинг и число отзывов считаются по таблице reviews. */
+export const HOUSE_ADDRESS = `case when a.id is not null then json_build_object('id',a.id,'city',a.city,'street',a.street,
+    'house',a.house,'lat',a.lat,'lon',a.lon,'metroIds',a.metro_ids) end`
+
 export const HOOKER_COLUMNS = `
+  ${HOUSE_ADDRESS} as address,
+  h.show_house, h.telegram, h.paused, h.confirmed_at,
   h.id, h.name, h.age, h.city, h.district, h.region, h.phone, h.height,
   h.price_per_hour, h.services, h.about, h.photos, h.main_photo, h.is_new, h.is_published, h.created_at, h.owner_id,
   coalesce(r.reviews_count, 0) as reviews_count,
@@ -53,6 +71,7 @@ export const HOOKER_COLUMNS = `
 `
 
 export const HOOKER_JOIN = `
+  left join house_addresses a on a.id = h.address_id
   left join (
     select hooker_id, count(*) as reviews_count, round(avg(rating)::numeric, 1) as rating
     from reviews
@@ -61,6 +80,12 @@ export const HOOKER_JOIN = `
 `
 
 export const toView = (row: HookerRow): HookerView => ({
+  address: row.show_house ? row.address : null,
+  metroIds: row.address?.metroIds ?? [],
+  showHouse: row.show_house,
+  telegram: row.telegram,
+  paused: row.paused,
+  confirmedAt: row.confirmed_at?.toISOString() ?? null,
   id: row.id,
   name: row.name,
   age: row.age,

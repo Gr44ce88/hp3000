@@ -33,7 +33,7 @@ export default function FavoritesPage() {
             Избранное хранится в аккаунте — войдите, чтобы видеть сохранённое.
           </p>
           <Link
-            to="/auth"
+            to="/auth" state={{ from: "/favorites" }}
             className="mt-4 inline-flex h-7 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium text-white"
           >
             <LogIn className="size-3" aria-hidden="true" />
@@ -90,9 +90,10 @@ export default function FavoritesPage() {
             <li key={item.id} className="min-w-0">
               <HookerCard
                 id={item.id}
-                name={item.name}
+                confirmedAt={item.confirmedAt} name={item.name}
                 age={item.age}
                 city={item.city}
+                district={item.district}
                 pricePerHour={item.pricePerHour}
                 height={item.height}
                 photoUrl={item.mainPhoto || item.photos[0]}

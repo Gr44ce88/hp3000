@@ -1,23 +1,24 @@
-import { Link, useParams } from 'react-router-dom'
+import {Freshness} from '@/features/hookers/Freshness'
+import {Contact} from '@/features/hookers/Contact'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   Check,
   Coins,
-  Copy,
   CreditCard,
   Heart,
   MapPin,
   Pencil,
-  Phone,
   Send,
   Star,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Field, Textarea } from '@/components/ui/Textarea'
 import { Spinner } from '@/components/ui/Spinner'
-import { YandexMap } from '@/components/widgets/YandexMap'
+import { HouseMap } from '@/features/geo/HouseMap'
+import { addressLabel, metroLabel } from '@/features/geo/metro'
 import { SimilarHookers } from '@/components/widgets/SimilarHookers'
 import { PhotoGallery } from '@/components/widgets/PhotoGallery'
 import { ReviewCard, Stars } from '@/components/widgets/ReviewCard'
@@ -27,12 +28,15 @@ import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { createPayment, fetchPayment, mockPay, type PaymentMethod } from '@/features/payments/api'
 import { COMMISSION_CURRENCY, PUBLICATION_COMMISSION } from '@/features/hookers/schema'
 import { useHistoryStore } from '@/stores/history'
-import { copyText } from '@/lib/clipboard'
 import { cn } from '@/lib/cn'
 
 const money = new Intl.NumberFormat('ru-RU')
 
 export default function HookerDetailPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const source = location.state?.catalogUrl
+  const catalogUrl = typeof source === 'string' && /^(?:\/|\/hookers|\/map)(?:\?|$)/.test(source) ? source : '/'
   const { id = '' } = useParams()
   const { token, user } = useSession()
   const favoritesQuery = useFavoriteIds()
@@ -43,7 +47,6 @@ export default function HookerDetailPage() {
   const [sort, setSort] = useState<ReviewSort>('new')
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState<'ok' | 'fail' | false>(false)
   const queryClient = useQueryClient()
   const [publishError, setPublishError] = useState<string | null>(null)
 
@@ -71,7 +74,7 @@ export default function HookerDetailPage() {
   })
 
   const hooker = useQuery({
-    queryKey: ['hooker', id],
+    queryKey: ['hooker', id, user?.id ?? 'guest'],
     queryFn: ({ signal }) => fetchHooker(id, signal),
     enabled: Boolean(id),
   })
@@ -100,9 +103,6 @@ export default function HookerDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewedId])
 
-  useEffect(() => {
-    setCopied(false)
-  }, [viewedId])
 
   if (hooker.isPending) {
     return (
@@ -118,7 +118,7 @@ export default function HookerDetailPage() {
         <p className="text-sm font-medium text-content">Анкета не найдена</p>
         <p className="mt-1 text-xs text-content-muted">Возможно, её сняли с публикации.</p>
         <Link
-          to="/"
+          to={catalogUrl}
           className="mt-4 inline-flex h-7 items-center rounded-full bg-strong px-3 text-xs font-medium text-surface"
         >
           К каталогу
@@ -135,11 +135,17 @@ export default function HookerDetailPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <Link
-        to="/"
-        className="inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
+        to={catalogUrl}
+        onClick={(event) => {
+          if (source === catalogUrl && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+            event.preventDefault()
+            navigate(-1)
+          }
+        }}
+        className="back-link inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
       >
         <ArrowLeft className="size-3" aria-hidden="true" />
-        Каталог
+        {catalogUrl.startsWith('/map') ? 'К карте' : 'Каталог'}
       </Link>
 
       {isOwner && !item.isPublished && (
@@ -168,7 +174,7 @@ export default function HookerDetailPage() {
                 </Button>
               )
             })}
-            <Button
+            {import.meta.env.DEV && <Button
               size="sm"
               variant="ghost"
               disabled={testPay.isPending}
@@ -176,13 +182,13 @@ export default function HookerDetailPage() {
             >
               <Check className="size-3.5" aria-hidden="true" />
               Подтвердить тестом
-            </Button>
+            </Button>}
           </div>
           {publishError && <p className="mt-2 text-[11px] text-danger">{publishError}</p>}
         </div>
       )}
 
-      <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="detail-overview mt-3 grid gap-6 lg:grid-cols-[1fr_1fr]">
         <PhotoGallery photos={item.photos} mainPhoto={item.mainPhoto} alt={item.name} />
 
         <div>
@@ -199,7 +205,7 @@ export default function HookerDetailPage() {
             </div>
             <button
               type="button"
-              onClick={() => toggleFavoriteMutation.mutate({ id: item.id, favorite })}
+              onClick={() => token ? toggleFavoriteMutation.mutate({ id: item.id, favorite }) : navigate('/auth', { state: { from: location.pathname } })}
               aria-pressed={favorite}
               className="grid size-8 shrink-0 place-items-center rounded-full bg-chip text-sm transition-colors hover:bg-content/10"
               aria-label={favorite ? 'Убрать из избранного' : 'В избранное'}
@@ -224,6 +230,8 @@ export default function HookerDetailPage() {
             <span className="text-xs font-normal text-content-muted">/час</span>
           </p>
 
+          <Freshness at={item.confirmedAt}/>
+          {item.paused ? <p>Анкета на паузе</p> : <Contact key={item.id} phone={item.phone} telegram={item.telegram}/>}
           {item.services.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5">
               {item.services.map((service) => (
@@ -235,41 +243,6 @@ export default function HookerDetailPage() {
           )}
 
           {item.about && <p className="mt-4 text-[13px] whitespace-pre-line text-content">{item.about}</p>}
-
-          {/* Контакт — главное действие страницы, поэтому крупно и отдельно от вторичного. */}
-          <div className="mt-4 rounded-lg bg-mat p-3 ring-1 ring-hairline">
-            <p className="text-[11px] tracking-wide text-content-muted uppercase">Связаться</p>
-            <div className="mt-2 flex items-center gap-2">
-              <a
-                href={`tel:${item.phone.replace(/[^+\d]/g, '')}`}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white tabular-nums hover:opacity-90"
-              >
-                <Phone className="size-4" aria-hidden="true" />
-                {item.phone}
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  void copyText(item.phone).then((ok) => {
-                    setCopied(ok ? 'ok' : 'fail')
-                    if (ok) setTimeout(() => setCopied(false), 2000)
-                  })
-                }}
-                className="grid size-10 shrink-0 place-items-center rounded-full bg-chip text-content hover:bg-content/10"
-                aria-label={copied === 'ok' ? 'Телефон скопирован' : 'Скопировать телефон'}
-                title="Скопировать телефон"
-              >
-                {copied === 'ok' ? (
-                  <Check className="size-4" aria-hidden="true" />
-                ) : (
-                  <Copy className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            </div>
-            <p className="mt-1.5 h-4 text-[11px] text-content-muted" aria-live="polite">
-              {copied === 'ok' ? 'Скопировано в буфер' : copied === 'fail' ? 'Не удалось — выделите номер вручную' : ''}
-            </p>
-          </div>
 
           {isOwner && (
             <Link
@@ -283,26 +256,15 @@ export default function HookerDetailPage() {
         </div>
       </div>
 
-      <div className="mt-8 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[11px] tracking-wide text-content-muted uppercase">Район</h2>
-          <a
-            href={`https://yandex.ru/maps/?text=${encodeURIComponent(
-              `${item.city}${item.district ? `, ${item.district}` : ''}`,
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] text-content-muted underline decoration-hairline underline-offset-2 hover:text-content"
-          >
-            Открыть в Яндексе
-          </a>
-        </div>
-        <YandexMap
-          points={[{ district: item.district, city: item.city, count: 1 }]}
-          hot={1}
-          warm={1}
-        />
-      </div>
+      <section className="mt-8 space-y-3">
+        <h2 className="font-medium">Адрес встречи</h2>
+        {item.address ? <>
+          <p>{addressLabel(item.address)}</p>
+          {item.address.metroIds.length > 0 && <p className="text-sm text-content-muted">Метро рядом · {metroLabel(item.address.metroIds)}</p>}
+          <HouseMap items={[{id:item.id,name:item.name,address:item.address}]}/>
+          <a className="underline" target="_blank" rel="noreferrer" href={`https://yandex.ru/maps/?pt=${item.address.lon},${item.address.lat}&z=17`}>Открыть дом в Яндекс Картах</a>
+        </> : item.showHouse===false ? <p>Только метро · {metroLabel(item.metroIds ?? []) || 'рядом нет станций'}</p> : <p className="text-content-muted">{item.district && item.district+' · '}Автор пока не указал дом.</p>}
+      </section>
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-2">

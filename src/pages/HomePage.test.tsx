@@ -55,6 +55,21 @@ describe('HomePage', () => {
     await waitFor(() => expect(urls.some((url) => url.includes('q=%D0%9A%D0%B8%D1%80%D0%B0'))).toBe(true))
   })
 
+  it('применяет район и бюджет из ссылки и показывает район на карточке', async () => {
+    const urls: URL[] = []
+    server.use(http.get('*/api/hookers', ({ request }) => {
+      urls.push(new URL(request.url))
+      return HttpResponse.json({ items: hookersFixture, total: hookersFixture.length,
+        page: 1, limit: 12, hasMore: false, cities: ['Москва'] })
+    }))
+    renderWithProviders(<HomePage />, { route: '/?district=Пресня&max=3000' })
+    expect(await screen.findByLabelText('Максимальный бюджет')).toHaveValue('3000')
+    expect(screen.getByRole('button', {name:'Район Пресня ×'})).toBeInTheDocument()
+    await waitFor(() => expect(urls.some(({ searchParams }) =>
+      searchParams.get('district') === 'Пресня' && searchParams.get('maxPrice') === '3000')).toBe(true))
+    expect(await screen.findByRole('link', { name: /Анкета: Первый контакт.*Пресня/ })).toBeInTheDocument()
+  })
+
   it('кнопка «Показать ещё» добавляет страницу, а не заменяет список', async () => {
     const user = userEvent.setup()
     renderWithProviders(<HomePage />)

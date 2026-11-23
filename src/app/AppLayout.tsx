@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLayoutEffect, useRef } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import {
   Flame,
   Heart,
@@ -7,10 +7,12 @@ import {
   LogIn,
   Moon,
   Plus,
-  Sparkles,
+  MapPin,
   Sun,
   UserRound,
 } from 'lucide-react'
+import { mapLinkProps } from '@/features/hookers/catalogNavigation'
+import { CatalogReturn } from '@/features/hookers/CatalogReturn'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/hooks/useTheme'
@@ -23,22 +25,31 @@ const YEAR = new Date().getFullYear()
 
 const navItems = [
   { to: '/', label: 'Анкеты', icon: LayoutGrid, end: true },
-  { to: '/map', label: 'Карта', icon: Flame },
+  { to: '/map', label: 'Карта', icon: MapPin },
+  { to: '/favorites', label: 'Избранное', icon: Heart },
 ] as const
 
 export function AppLayout() {
   const { isDark, toggle } = useTheme()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
+  const mapLink = pathname==='/' || pathname==='/hookers' ? mapLinkProps(location) : {to:'/map'}
+  const navClass = 'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content'
+  const navigationType = useNavigationType()
+  const lastPath = useRef<string | null>(null)
   const user = useSessionStore((state) => state.user)
   const clear = useSessionStore((state) => state.clear)
   const navigate = useNavigate()
   const mainRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (lastPath.current === pathname) return
+    lastPath.current = pathname
+    if (navigationType !== 'POP') window.scrollTo(0, 0)
     const title = titleFor(pathname)
     document.title = title ? `${title} · hp3k` : 'Страница не найдена · hp3k'
-    mainRef.current?.focus()
-  }, [pathname])
+    mainRef.current?.focus({preventScroll: true})
+  }, [pathname, navigationType])
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -49,42 +60,41 @@ export function AppLayout() {
         К содержанию
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:h-14 sm:gap-x-3 sm:px-4 sm:py-0">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <NavLink
-              to="/"
-              className="flex shrink-0 items-center gap-2 font-semibold text-content"
-            >
-              <span className="grid size-6 place-items-center rounded-md bg-accent text-white">
-                <Sparkles className="size-3.5" aria-hidden="true" />
-              </span>
-              <span className="hidden text-[13px] sm:inline">hp3k</span>
-            </NavLink>
+      <header className="app-header sticky top-0 z-30 border-b border-hairline bg-surface/85 backdrop-blur">
+        <div className="header-layout mx-auto max-w-6xl px-3 sm:px-4">
+          <NavLink
+            to="/"
+            className="flex shrink-0 items-center gap-2 font-semibold text-content"
+          >
+            <span className="wordmark">hp<span>3k</span></span>
+          </NavLink>
 
-            <nav className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={'end' in item ? item.end : undefined}
-                  aria-label={item.label}
-                  title={item.label}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
-                      isActive && 'bg-chip font-medium text-content hover:text-content',
-                    )
-                  }
-                >
-                  <item.icon className="size-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
-          </div>
+          <nav aria-label="Основная навигация" className="main-nav">
+            {navItems.map((item) => item.to==='/' && pathname==='/map' ? (
+              <CatalogReturn key={item.to} aria-label={item.label} className={navClass}>
+                <item.icon className="size-3.5" aria-hidden="true"/><span>{item.label}</span>
+              </CatalogReturn>
+            ) : (
+              <NavLink
+                key={item.to}
+                {...(item.to==='/map' ? mapLink : {to:item.to})}
+                end={'end' in item ? item.end : undefined}
+                aria-label={item.label}
+                title={item.label}
+                className={({ isActive }) =>
+                  cn(
+                    navClass,
+                    isActive && 'bg-chip font-medium text-content hover:text-content',
+                  )
+                }
+              >
+                <item.icon className="size-3.5" aria-hidden="true" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
 
-          <div className="relative z-40 ml-auto flex shrink-0 items-center gap-2">
+          <div className="header-actions relative z-40 flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -116,14 +126,14 @@ export function AppLayout() {
                 }}
               />
             ) : (
-              <ProfileChip variant="anonymous" />
+              <Link to="/auth" className="signin">Войти</Link>
             )}
 
           </div>
         </div>
       </header>
 
-      <main
+      <main data-page={pathname.split('/').filter(Boolean)[0] || 'catalog'}
         id="main"
         ref={mainRef}
         tabIndex={-1}
@@ -139,11 +149,12 @@ export function AppLayout() {
           aria-label="Нижняя навигация"
           className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-content-muted"
         >
+          {pathname==='/map' ? <CatalogReturn className="inline-flex items-center gap-1 hover:text-content"><LayoutGrid className="size-3" aria-hidden="true"/>Анкеты</CatalogReturn> :
           <Link to="/" className="inline-flex items-center gap-1 hover:text-content">
             <LayoutGrid className="size-3" aria-hidden="true" />
             Анкеты
-          </Link>
-          <Link to="/map" className="inline-flex items-center gap-1 hover:text-content">
+          </Link>}
+          <Link {...mapLink} className="inline-flex items-center gap-1 hover:text-content">
             <Flame className="size-3" aria-hidden="true" />
             Карта
           </Link>

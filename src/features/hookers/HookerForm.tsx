@@ -1,5 +1,8 @@
+import { AddressField } from '@/features/geo/AddressField'
+import type { HouseAddress } from '@/features/geo/metro'
 import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ListingPreview } from './ListingPreview'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Camera, Check, Loader2, Plus, Save, Star, X } from 'lucide-react'
@@ -23,6 +26,7 @@ import { uploadPhoto } from '@/features/hookers/api'
 import { cn } from '@/lib/cn'
 
 type Props = {
+  initialAddress?: HouseAddress | null
   defaultValues?: Partial<ListingInput>
   submitLabel: string
   pending?: boolean
@@ -33,13 +37,17 @@ type Props = {
 
 export function HookerForm({
   defaultValues,
+  initialAddress,
   submitLabel,
   pending = false,
   error,
   requiresPayment = true,
   onSubmit,
 }: Props) {
-  const [, setSaved] = useState<ListingValues | null>(null)
+  const [preview,setPreview] = useState<ListingValues | null>(null)
+  const [address,setAddress] = useState<HouseAddress | null>(initialAddress ?? null)
+  const [addressError,setAddressError] = useState('')
+  const [addressTouched,setAddressTouched] = useState(false)
 
   const {
     register,
@@ -51,9 +59,11 @@ export function HookerForm({
   } = useForm<ListingInput, unknown, ListingValues>({
     resolver: zodResolver(listingSchema),
     mode: 'onTouched',
-    defaultValues: { paymentMethod: 'card', ...defaultValues },
+    defaultValues: { paymentMethod: 'card', city:CITIES[0], ...defaultValues },
   })
 
+  const city = useWatch({control,name:'city'}) ?? CITIES[0]
+  const showHouse = useWatch({control,name:'showHouse'})
   const paymentMethod = useWatch({ control, name: 'paymentMethod' })
   const about = useWatch({ control, name: 'about' }) ?? ''
   const photos = useWatch({ control, name: 'photos' }) ?? []
@@ -96,13 +106,24 @@ export function HookerForm({
     if (mainPhoto === url) setValue('mainPhoto', next[0] ?? '')
   }
 
-  return (
-    <form
+  return (<>
+    {preview && address && <ListingPreview values={preview} address={address} pending={pending} error={error}
+      onEdit={()=>{
+        setPreview(null)
+        requestAnimationFrame(()=>document.getElementById('preview-listing')?.focus())
+      }}
+      onConfirm={()=>onSubmit({...preview,addressId:address.id})}/>}
+    <form hidden={Boolean(preview)}
       noValidate
       className="space-y-4"
       onSubmit={handleSubmit((values) => {
-        setSaved(null)
-        onSubmit(values as ListingPayload)
+        if (!address && (requiresPayment || addressTouched || values.city !== defaultValues?.city)) {
+          setAddressError('Найдите дом и подтвердите адрес встречи.')
+          document.getElementById('meeting-address')?.scrollIntoView({block:'center'})
+          return
+        }
+        if (requiresPayment) setPreview(values)
+        else onSubmit({...values, addressId:address?.id})
       })}
     >
       {error && (
@@ -131,7 +152,7 @@ export function HookerForm({
           <select
             id="city"
             className="h-10 w-full rounded-md border border-line bg-surface-elevated px-2 text-base text-content sm:text-sm"
-            {...register('city')}
+            {...register('city', {onChange:()=>{setAddress(null);setAddressTouched(true);setAddressError('')}})}
           >
             <option value={CITIES[0]}>{CITIES[0]}</option>
             {CITIES.slice(1).map((city) => (
@@ -151,6 +172,22 @@ export function HookerForm({
           invalid={Boolean(errors.phone)}
           {...register('phone')}
         />
+      </Field>
+
+      <Field label="Telegram (по желанию)" htmlFor="telegram" error={errors.telegram?.message}>
+        <Input id="telegram" placeholder="@username" {...register('telegram')}/>
+      </Field>
+      <div id="meeting-address"><AddressField key={city} city={city} initial={address} selected={address}
+        onChange={item=>{setAddress(item);setAddressTouched(true);setAddressError('')}}/>
+        <fieldset className="mt-3 space-y-2">
+          <legend className="font-medium">Что увидят посетители</legend>
+          <label className="block"><input type="checkbox" {...register('showHouse')}/> Показывать точный адрес и дом на карте</label>
+          <p className="text-sm text-content-muted">{showHouse ? 'Посетители увидят улицу, номер дома и точку на карте.' : 'Только метро. Дом используется для поиска ближайших станций.'}</p>
+        </fieldset>
+        {addressError && <p role="alert" className="text-sm text-danger">{addressError}</p>}
+      </div>
+      <Field label="Район" htmlFor="district" error={errors.district?.message}>
+        <Input id="district" placeholder="Например, Пресня" maxLength={60} {...register('district')} />
       </Field>
 
       <Field label="Регион" htmlFor="region" required error={errors.region?.message}>
@@ -349,15 +386,15 @@ export function HookerForm({
             })}
           </div>
           <p className="mt-2 text-[11px] text-content-muted">
-            Заглушка: реальное списание подключим позже.
+            После создания анкеты откроется оплата публикации.
           </p>
         </fieldset>
       )}
 
       <div className="flex gap-2">
-        <Button type="submit" isLoading={pending}>
+        <Button id="preview-listing" type="submit" disabled={uploading} isLoading={pending}>
           <Save className="size-4" aria-hidden="true" />
-          {submitLabel}
+          {requiresPayment ? 'Предпросмотр анкеты' : submitLabel}
         </Button>
         <Link
           to="/hookers"
@@ -367,6 +404,6 @@ export function HookerForm({
           Отмена
         </Link>
       </div>
-    </form>
+    </form></>
   )
 }

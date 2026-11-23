@@ -10,7 +10,7 @@ export type YandexMapProps = {
   /** Порог «много анкет» — от него зависит цвет и радиус пятна. */
   hot: number
   warm: number
-  onPick?: (district: string) => void
+  onPick?: (district: string, city: string) => void
   className?: string
 }
 
@@ -52,6 +52,9 @@ const P_RESET: Record<'hot' | 'warm' | 'few', string> = {
 /** Цвет пятна: красный — жарко, коричневый — средне, серый — пусто. */
 const tone = (count: number, hot: number, warm: number) =>
   count >= hot ? P_RESET.hot : count >= warm ? P_RESET.warm : P_RESET.few
+
+const escapeLabel = (value: string) =>
+  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 
 /**
  * Карта плотности: пятно на район, размер и цвет от числа анкет.
@@ -103,8 +106,8 @@ export function YandexMap({ points, hot, warm, onPick, className }: YandexMapPro
       const circle = new ymaps.Circle(
         [coords, radius],
         {
-          hintContent: `${point.district}: ${point.count}`,
-          balloonContent: `<strong>${point.district}</strong><br>${point.city}<br>анкет: ${point.count}`,
+          hintContent: `${escapeLabel(point.district)}: ${point.count}`,
+          balloonContent: `<strong>${escapeLabel(point.district)}</strong><br>${escapeLabel(point.city)}<br>анкет: ${point.count}`,
         },
         {
           fillColor: color,
@@ -115,35 +118,74 @@ export function YandexMap({ points, hot, warm, onPick, className }: YandexMapPro
           interactivityModel: 'default#opaque',
         },
       )
-      if (onPick) circle.events.add('click', () => onPick(point.district))
+      if (onPick) circle.events.add('click', () => onPick(point.district, point.city))
       map.geoObjects.add(circle)
 
       const label = new ymaps.Placemark(
         coords,
-        { hintContent: `${point.district}: ${point.count}`, iconContent: String(point.count) },
+        {
+          hintContent: `${escapeLabel(point.district)}: ${point.count}`,
+          iconContent: String(point.count),
+        },
         { preset: 'islands#darkBlueStretchyIcon' },
       )
-      if (onPick) label.events.add('click', () => onPick(point.district))
+      if (onPick) label.events.add('click', () => onPick(point.district, point.city))
       map.geoObjects.add(label)
     }
   }, [points, hot, warm, onPick, status])
 
   return (
-    <div className={cn('relative overflow-hidden rounded-lg bg-mat ring-1 ring-hairline', className)}>
+    <div
+      className={cn(
+        'bg-mat ring-hairline relative overflow-hidden rounded-lg ring-1',
+        className,
+      )}
+    >
       <div ref={containerRef} className="h-[320px] w-full sm:h-[380px]" />
 
-      {status === 'loading' && (
-        <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-xs text-content-muted">
-          Загружаем карту…
-        </p>
-      )}
+      {status !== 'ready' && <DistrictDiagram points={points} onPick={onPick} />}
+    </div>
+  )
+}
 
-      {status === 'error' && (
-        <p className="absolute inset-x-0 top-1/2 px-4 -translate-y-1/2 text-center text-xs text-content-muted">
-          Карта не загрузилась. Проверь сеть и `VITE_YANDEX_MAPS_KEY` — без ключа Яндекс может
-          ограничивать запросы.
-        </p>
-      )}
+/** Схема по координатам остаётся доступной, пока внешний картографический API недоступен. */
+function DistrictDiagram({ points, onPick }: Pick<YandexMapProps, 'points' | 'onPick'>) {
+  const markers = points.map((point) => ({
+    ...point,
+    coords: coordsFor(point.district, point.city).coords,
+  }))
+  const latitudes = markers.map(({ coords }) => coords[0])
+  const longitudes = markers.map(({ coords }) => coords[1])
+  const north = Math.max(...latitudes)
+  const south = Math.min(...latitudes)
+  const west = Math.min(...longitudes)
+  const east = Math.max(...longitudes)
+  return (
+    <div className="district-diagram" aria-label="Схема расположения районов">
+      <span className="diagram-caption">Схема районов</span>
+      {markers.map(({ city, district, count, coords }) => {
+        const x = east === west ? 50 : 9 + (82 * (coords[1] - west)) / (east - west)
+        const y = north === south ? 50 : 17 + (68 * (north - coords[0])) / (north - south)
+        const name = [city, district].filter(Boolean).join(' · ')
+        const position = { left: x + '%', top: y + '%' }
+        return onPick ? (
+          <button
+            key={name}
+            type="button"
+            className="diagram-pin"
+            style={position}
+            onClick={() => onPick(district, city)}
+            aria-label={name + ', анкет: ' + count}
+            title={name}
+          >
+            {count}
+          </button>
+        ) : (
+          <span key={name} className="diagram-label" style={position}>
+            {name}
+          </span>
+        )
+      })}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import express, { type Express } from 'express'
 import { config } from './config.ts'
 import { errorMiddleware } from './http/respond.ts'
 import { notFound } from './http/errors.ts'
+import { addressesRouter } from './routes/addresses.ts'
 import { authRouter } from './routes/auth.ts'
 import { favoritesRouter } from './routes/favorites.ts'
 import { healthRouter } from './routes/health.ts'
@@ -38,6 +39,7 @@ export function createApp(): Express {
 
   app.use('/api', healthRouter)
   app.use('/api', authRouter)
+  app.use('/api', addressesRouter)
   app.use('/api', hookersRouter)
   // Оповещение FreeKassa — до остальных ручек, оно без авторизации.
   app.use('/api', paymentsRouter)

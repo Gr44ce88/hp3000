@@ -42,9 +42,10 @@ export function SimilarHookers({
         {items.map((item) => (
           <li key={item.id} className="min-w-0">
             <HookerCard
-              name={item.name}
+              confirmedAt={item.confirmedAt} name={item.name}
               age={item.age}
               city={item.city}
+              district={item.district}
               pricePerHour={item.pricePerHour}
               height={item.height}
               photoUrl={item.mainPhoto || item.photos[0]}

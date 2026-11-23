@@ -1,109 +1,99 @@
 import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { Flame, MapPinOff } from 'lucide-react'
-import { YandexMap } from '@/components/widgets/YandexMap'
-import { Spinner } from '@/components/ui/Spinner'
-import { fetchDistrictStats } from '@/features/hookers/api'
-
-/** Порог тона: сколько анкет в районе считается «много». */
-const HOT = 3
-const WARM = 2
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { catalogFilters } from '@/features/hookers/catalogFilters'
+import { CatalogReturn } from '@/features/hookers/CatalogReturn'
+import { useFavoriteIds } from '@/features/favorites/api'
+import { toQuery } from '@/features/hookers/api'
+import { stationById } from '@/features/geo/metro'
+import { apiClient } from '@/lib/api/client'
+import { HouseMap, type MapListing } from '@/features/geo/HouseMap'
+import { addressLabel } from '@/features/geo/metro'
 
 export default function MapPage() {
   const navigate = useNavigate()
-  const stats = useQuery({
-    queryKey: ['stats', 'districts'],
-    queryFn: ({ signal }) => fetchDistrictStats(signal),
-    staleTime: 60_000,
+  const location = useLocation()
+  const [params] = useSearchParams()
+  const favorites = useFavoriteIds()
+  const { request, onlyFavorites, metro } = catalogFilters(params, favorites.data ?? [])
+  const query = toQuery(request)
+  const mapUrl = '/map' + location.search
+  const pick = useCallback(
+    (id: string) => navigate('/hookers/' + id, { state: { catalogUrl: mapUrl } }),
+    [navigate, mapUrl],
+  )
+  const noFavorites = onlyFavorites && !request.ids?.length
+  const favoritesLoading = onlyFavorites && favorites.isFetching
+  const favoritesError = onlyFavorites && favorites.isError
+  const summary = [
+    stationById.get(metro)?.name,
+    request.maxPrice && 'до ' + request.maxPrice.toLocaleString('ru-RU') + ' ₽/час',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const listings = useQuery({
+    queryKey: ['hookers', 'map', query],
+    enabled: !noFavorites,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<{ items: MapListing[] }>(
+        '/map/listings' + query,
+        {
+          signal,
+        },
+      )
+      return data.items
+    },
   })
-
-  const items = stats.data ?? []
-  const busiest = items[0]
-
-  const pick = useCallback((district: string) => {
-    navigate(`/hookers?q=${encodeURIComponent(district)}`)
-  }, [navigate])
-
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="flex items-center gap-2 text-xl font-medium tracking-tight text-content">
-        <Flame className="size-5 text-brand-600" aria-hidden="true" />
-        Карта
-      </h1>
-      <p className="mt-0.5 text-[11px] text-content-muted">
-        Анкеты по районам на Яндекс.Картах: пятна показывают плотность, клик по пятну открывает
-        этот район.
+    <section className="mx-auto max-w-5xl space-y-4">
+      <h1 className="text-2xl font-medium">Карта анкет</h1>
+      <CatalogReturn className="inline-flex min-h-11 items-center underline">
+        К списку анкет
+      </CatalogReturn>
+      {summary && <p>{summary}</p>}
+      <p className="text-content-muted">
+        Выберите дом, чтобы посмотреть анкеты по этому адресу.
       </p>
-
-      <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_220px]">
-        <div className="relative">
-          <YandexMap points={items} hot={HOT} warm={WARM} onPick={pick} />
-          <span className="absolute top-2 right-2 rounded-full bg-black/45 px-2 py-0.5 text-[11px] text-white backdrop-blur">
-            слой плотности
-          </span>
-        </div>
-
-        <aside className="space-y-3 rounded-lg bg-surface-elevated p-3 ring-1 ring-hairline">
-          <p className="text-[11px] tracking-wide text-content-muted uppercase">Легенда</p>
-          <ul className="space-y-2 text-xs text-content-muted">
-            {[
-              ['bg-danger', `много анкет (${HOT}+)`],
-              ['bg-rating', `${WARM} анкеты`],
-              ['bg-line', 'мало'],
-            ].map(([tone, label]) => (
-              <li key={label} className="flex items-center gap-2">
-                <span className={`size-3 rounded-sm ${tone}`} />
-                {label}
-              </li>
-            ))}
-          </ul>
-          <p className="border-t border-hairline pt-3 text-[11px] text-content-muted">
-            Точки ставятся по району; если района нет в справочнике координат — по центру города.
-          </p>
-        </aside>
-      </div>
-
-      {stats.isPending && (
-        <div className="mt-6">
-          <Spinner label="Считаем районы" />
-        </div>
+      {((listings.isPending && !noFavorites) || favoritesLoading) && (
+        <p role="status">Загружаем адреса…</p>
       )}
-
-      {stats.isError && (
-        <p className="mt-6 text-xs text-content-muted">Не удалось получить статистику по районам.</p>
+      {(listings.isError || favoritesError) && (
+        <button
+          className="underline"
+          onClick={() => void (favoritesError ? favorites.refetch() : listings.refetch())}
+        >
+          Не удалось загрузить адреса. Повторить
+        </button>
       )}
-
-      {stats.isSuccess && (
-        <>
-          <p className="mt-6 text-[11px] tracking-wide text-content-muted uppercase">
-            Районы по плотности{busiest ? ` · максимум: ${busiest.district}` : ''}
-          </p>
-          {items.length === 0 ? (
-            <p className="mt-2 flex items-center gap-2 rounded-lg bg-mat p-4 text-xs text-content-muted ring-1 ring-dashed ring-hairline">
-              <MapPinOff className="size-4 shrink-0" aria-hidden="true" />
-              Пока ни одной анкеты с районом.
-            </p>
-          ) : (
-            <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {items.map((item) => (
-                <li key={item.district} className="rounded-lg bg-mat p-3 ring-1 ring-hairline">
-                  <span
-                    aria-hidden="true"
-                    className={`mb-2 block h-1 rounded-full ${
-                      item.count >= HOT ? 'bg-danger' : item.count >= WARM ? 'bg-rating' : 'bg-line'
-                    }`}
-                  />
-                  <p className="text-xs font-medium text-content">{item.district}</p>
-                  <p className="mt-1 text-[11px] text-content-muted tabular-nums">
-                    {item.count} {item.count === 1 ? 'анкета' : 'анкет'}
-                  </p>
+      {noFavorites && !favoritesLoading && !favoritesError && (
+        <p>В избранном нет анкет с адресом.</p>
+      )}
+      {!noFavorites &&
+        listings.data &&
+        (listings.data.length ? (
+          <>
+            <p>Анкет на карте · {listings.data.length}</p>
+            <HouseMap items={listings.data} onPick={pick} />
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {listings.data.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    className="bg-mat block rounded-lg p-3"
+                    to={'/hookers/' + item.id}
+                    state={{ catalogUrl: mapUrl }}
+                  >
+                    {item.name}
+                    <span className="text-content-muted block text-sm">
+                      {addressLabel(item.address)}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
-          )}
-        </>
-      )}
-    </div>
+          </>
+        ) : (
+          <p>По этим условиям нет анкет с подтверждённым адресом дома.</p>
+        ))}
+    </section>
   )
 }

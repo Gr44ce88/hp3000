@@ -34,6 +34,8 @@ export const PHOTOS_MAX = 6
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]['value']
 
 export const listingSchema = z.object({
+  showHouse:z.boolean().default(false),
+  telegram:z.string().trim().regex(/^(?:@?[A-Za-z][A-Za-z0-9_]{4,31})?$/,'Введите имя Telegram, например anna_city').transform(value=>value.replace(/^@/,'')).default(''),
   name: z
     .string()
     .trim()
@@ -41,6 +43,7 @@ export const listingSchema = z.object({
     .max(60, 'Не длиннее 60 символов'),
   age: z.coerce.number('Введите возраст').int().min(18, 'От 18 лет').max(80, 'Не больше 80'),
   city: z.enum(CITIES, 'Выберите город'),
+  district: z.string().trim().max(60, 'Не длиннее 60 символов').optional(),
   region: z.string().trim().min(2, 'Укажите регион').max(60, 'Не длиннее 60 символов'),
   phone: z
     .string()

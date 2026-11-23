@@ -46,7 +46,7 @@ export function PhotoGallery({ photos, mainPhoto, alt, className }: PhotoGallery
     return (
       <div
         className={cn(
-          'grid aspect-[4/3] place-items-center rounded-lg bg-mat text-5xl font-medium text-content-muted/60 ring-1 ring-hairline',
+          'monogram grid aspect-[4/3] place-items-center rounded-lg bg-mat text-5xl font-medium text-content-muted/60 ring-1 ring-hairline',
           className,
         )}
       >

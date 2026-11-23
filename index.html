@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#02182b" />
+    <meta name="theme-color" content="#75143b" />
     <meta
       name="description"
-      content="hp3k — каталог анкет: поиск, карта, избранное и отзывы."
+      content="hp3k — каталог анкет по метро и бюджету."
     />
     <title>hp3k</title>
     <script>
@@ -15,7 +15,7 @@
       try {
         var stored = localStorage.getItem('hp3k-theme')
         var dark =
-          stored === 'dark' ||
+          (stored && JSON.parse(stored).state?.theme === 'dark') ||
           (!stored && matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.classList.toggle('dark', dark)
       } catch {}

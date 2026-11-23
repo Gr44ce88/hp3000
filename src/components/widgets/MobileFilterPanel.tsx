@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChevronDown, RotateCcw, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { FILTER_OPTIONS, type FilterKey, type SortKey } from '@/features/hookers/sorting'
@@ -50,11 +50,18 @@ export function MobileFilterPanel({
   className,
 }: MobileFilterPanelProps) {
   const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const close = () => {
+    setOpen(false)
+    trigger.current?.focus()
+  }
 
   return (
-    <div className={cn('rounded-lg bg-surface-elevated ring-1 ring-hairline', className)}>
+    <div className={cn('rounded-lg bg-surface-elevated ring-1 ring-hairline', className)}
+      onKeyDown={(event) => { if (open && event.key === 'Escape') close() }}>
       <button
         type="button"
+        ref={trigger}
         aria-expanded={open}
         aria-controls="mobile-filters"
         onClick={() => setOpen((value) => !value)}
@@ -198,7 +205,7 @@ export function MobileFilterPanel({
             </button>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={close}
               className="ml-auto inline-flex h-10 items-center rounded-full bg-accent px-3 text-xs font-medium text-white"
             >
               Показать {resultCount}
