@@ -49,9 +49,11 @@ export type HookerRow = {
 }
 
 /** Колонки с агрегатами: рейтинг и число отзывов считаются по таблице reviews. */
+export const HOUSE_ADDRESS = `case when a.id is not null then json_build_object('id',a.id,'city',a.city,'street',a.street,
+    'house',a.house,'lat',a.lat,'lon',a.lon,'metroIds',a.metro_ids) end`
+
 export const HOOKER_COLUMNS = `
-  case when a.id is not null then json_build_object('id',a.id,'city',a.city,'street',a.street,
-    'house',a.house,'lat',a.lat,'lon',a.lon,'metroIds',a.metro_ids) end as address,
+  ${HOUSE_ADDRESS} as address,
   h.id, h.name, h.age, h.city, h.district, h.region, h.phone, h.height,
   h.price_per_hour, h.services, h.about, h.photos, h.main_photo, h.is_new, h.is_published, h.created_at, h.owner_id,
   coalesce(r.reviews_count, 0) as reviews_count,

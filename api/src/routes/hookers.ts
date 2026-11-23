@@ -6,6 +6,7 @@ import { conflict, forbidden, notFound } from '../http/errors.ts'
 import { handle, parseBody } from '../http/respond.ts'
 import { listQuerySchema, listingSchema, reviewSchema, reviewSortSchema } from '../schemas.ts'
 import {
+  HOUSE_ADDRESS,
   HOOKER_COLUMNS,
   HOOKER_JOIN,
   toReview,
@@ -50,7 +51,7 @@ async function findHooker(id: string | string[] | undefined): Promise<HookerRow>
 }
 
 hookersRouter.get(
-  '/hookers',
+  ['/hookers', '/map/listings'],
   handle(async (req, res) => {
     const params = parseBody(listQuerySchema, req.query)
     const where: string[] = ['h.is_published']
@@ -78,7 +79,6 @@ hookersRouter.get(
     }
     if (params.ids) {
       const ids = params.ids.split(',').map((id) => id.trim()).filter((id) => UUID_RE.test(id))
-      if (ids.length === 0) return res.json({ items: [], total: 0, page: params.page, limit: params.limit, hasMore: false, cities: config.cities })
       values.push(ids)
       where.push(`h.id = any($${values.length}::uuid[])`)
     }
@@ -102,13 +102,21 @@ hookersRouter.get(
       )
     }
 
-    const clause = where.length > 0 ? `where ${where.join(' and ')}` : ''
+    const clause = `where ${where.join(' and ')}`
+    if (req.path === '/map/listings') {
+      const items = await query(
+        `select h.id, h.name, ${HOUSE_ADDRESS} as address from hookers h
+         ${HOOKER_JOIN} ${clause} and a.id is not null order by ${SORTS[params.sort]}, h.id`,
+        values,
+      )
+      return res.json({ items })
+    }
     values.push(params.limit, (params.page - 1) * params.limit)
     const limitRef = `$${values.length - 1}`
     const offsetRef = `$${values.length}`
 
-    const rows = await query<HookerRow & { total_count: string }>(
-      `select ${HOOKER_COLUMNS}, count(*) over() as total_count
+    const rows = await query<HookerRow & { total_count: string; mapped_count: string }>(
+      `select ${HOOKER_COLUMNS}, count(*) over() as total_count, count(a.id) over() as mapped_count
        from hookers h
        ${HOOKER_JOIN}
        ${clause}
@@ -120,6 +128,7 @@ hookersRouter.get(
     const total = rows[0] ? Number(rows[0].total_count) : 0
     res.json({
       items: rows.map(toView),
+      mappedTotal: Number(rows[0]?.mapped_count ?? 0),
       total,
       page: params.page,
       limit: params.limit,

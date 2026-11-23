@@ -2,6 +2,7 @@ import { AddressField } from '@/features/geo/AddressField'
 import type { HouseAddress } from '@/features/geo/metro'
 import { Link } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ListingPreview } from './ListingPreview'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Camera, Check, Loader2, Plus, Save, Star, X } from 'lucide-react'
@@ -43,6 +44,7 @@ export function HookerForm({
   requiresPayment = true,
   onSubmit,
 }: Props) {
+  const [preview,setPreview] = useState<ListingValues | null>(null)
   const [address,setAddress] = useState<HouseAddress | null>(initialAddress ?? null)
   const [addressError,setAddressError] = useState('')
   const [addressTouched,setAddressTouched] = useState(false)
@@ -103,8 +105,14 @@ export function HookerForm({
     if (mainPhoto === url) setValue('mainPhoto', next[0] ?? '')
   }
 
-  return (
-    <form
+  return (<>
+    {preview && address && <ListingPreview values={preview} address={address} pending={pending} error={error}
+      onEdit={()=>{
+        setPreview(null)
+        requestAnimationFrame(()=>document.getElementById('preview-listing')?.focus())
+      }}
+      onConfirm={()=>onSubmit({...preview,addressId:address.id})}/>}
+    <form hidden={Boolean(preview)}
       noValidate
       className="space-y-4"
       onSubmit={handleSubmit((values) => {
@@ -113,7 +121,8 @@ export function HookerForm({
           document.getElementById('meeting-address')?.scrollIntoView({block:'center'})
           return
         }
-        onSubmit({...values, addressId:address?.id})
+        if (requiresPayment) setPreview(values)
+        else onSubmit({...values, addressId:address?.id})
       })}
     >
       {error && (
@@ -374,9 +383,9 @@ export function HookerForm({
       )}
 
       <div className="flex gap-2">
-        <Button type="submit" isLoading={pending}>
+        <Button id="preview-listing" type="submit" disabled={uploading} isLoading={pending}>
           <Save className="size-4" aria-hidden="true" />
-          {submitLabel}
+          {requiresPayment ? 'Предпросмотр анкеты' : submitLabel}
         </Button>
         <Link
           to="/hookers"
@@ -386,6 +395,6 @@ export function HookerForm({
           Отмена
         </Link>
       </div>
-    </form>
+    </form></>
   )
 }

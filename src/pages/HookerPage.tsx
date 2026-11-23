@@ -37,7 +37,7 @@ export default function HookerDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const source = location.state?.catalogUrl
-  const catalogUrl = typeof source === 'string' && /^(?:\/|\/hookers)(?:\?|$)/.test(source) ? source : '/'
+  const catalogUrl = typeof source === 'string' && /^(?:\/|\/hookers|\/map)(?:\?|$)/.test(source) ? source : '/'
   const { id = '' } = useParams()
   const { token, user } = useSession()
   const favoritesQuery = useFavoriteIds()
@@ -150,7 +150,7 @@ export default function HookerDetailPage() {
         className="back-link inline-flex items-center gap-1 text-[11px] text-content-muted hover:text-content"
       >
         <ArrowLeft className="size-3" aria-hidden="true" />
-        Каталог
+        {catalogUrl.startsWith('/map') ? 'К карте' : 'Каталог'}
       </Link>
 
       {isOwner && !item.isPublished && (

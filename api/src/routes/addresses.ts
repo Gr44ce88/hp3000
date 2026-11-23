@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Router } from 'express'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.ts'
-import { one, query } from '../db/pool.ts'
+import { one } from '../db/pool.ts'
 import { ApiError, badRequest } from '../http/errors.ts'
 import { handle, parseBody } from '../http/respond.ts'
 import { config } from '../config.ts'
@@ -78,14 +78,3 @@ export async function verifyAddress(id: string | undefined, city: string) {
   )
     throw badRequest('Выберите найденный дом в указанном городе.')
 }
-
-addressesRouter.get(
-  '/map/listings',
-  handle(async (_req, res) => {
-    const rows =
-      await query(`select h.id,h.name,row_to_json(address) as address from hookers h
-    join lateral (select ${addressColumns} from house_addresses a where a.id=h.address_id) address on true
-    where h.is_published order by h.name,h.id`)
-    res.json({ items: rows })
-  }),
-)

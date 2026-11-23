@@ -24,44 +24,25 @@ import { Input } from '@/components/ui/Input'
 
 import { fetchHookers } from '@/features/hookers/api'
 import { MetroPicker } from '@/features/geo/MetroPicker'
-import { metroLabel } from '@/features/geo/metro'
-import {
-  FILTER_OPTIONS,
-  SORT_OPTIONS,
-  type FilterKey,
-  type SortKey,
-} from '@/features/hookers/sorting'
+import { cardLocation, stationDistance } from '@/features/geo/metro'
+import { catalogFilters } from '@/features/hookers/catalogFilters'
+import type { FilterKey } from '@/features/hookers/sorting'
+import { useCatalogPosition, mapLinkProps } from '@/features/hookers/catalogNavigation'
 import { useSessionStore } from '@/features/auth/store'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { useViewModeStore } from '@/stores/viewMode'
 
 const PAGE_SIZE = 12
-/** Фильтр «До 3 000 ₽» превращается в потолок цены. */
-const CHEAP_LIMIT = 3000
 const FILTER_OUTSIDE_AUTH = ['with-photo', 'up-to-3000', 'reviewed', 'center'] as const
-const isFilterKey = (value: string): value is FilterKey =>
-  FILTER_OPTIONS.some((option) => option.value === value)
-
-const isSortKey = (value: string | null): value is SortKey =>
-  SORT_OPTIONS.some((option) => option.value === value)
-
 export default function HomePage() {
   const [params, setParams] = useSearchParams()
   const location = useLocation()
   const [copyStatus, setCopyStatus] = useState('')
   // Всё состояние каталога живёт в адресной строке: переживает перезагрузку и шарится ссылкой.
-  const query = params.get('q') ?? ''
-  const city = params.get('city') ?? ''
-  const metro = params.get('metro') ?? ''
-  const district = params.get('district') ?? ''
-  const service = params.get('service') ?? ''
-  const minPrice = params.get('min') ?? ''
-  const maxPrice = params.get('max') ?? ''
-  const sortParam = params.get('sort')
-  const sort: SortKey = isSortKey(sortParam) ? sortParam : 'price-asc'
-  const filters = (params.get('f') ?? '').split(',').filter(isFilterKey)
-  const onlyFavorites = filters.includes('favorites')
+  const favoritesQuery = useFavoriteIds()
+  const favorites = favoritesQuery.data ?? []
+  const {request, query, city, metro, district, service, minPrice, maxPrice, sort, filters, onlyFavorites} = catalogFilters(params,favorites)
   const hasActive =
     filters.length > 0 ||
     Boolean(service) ||
@@ -78,8 +59,6 @@ export default function HomePage() {
   const availableFilters: readonly FilterKey[] | undefined = token
     ? undefined
     : FILTER_OUTSIDE_AUTH
-  const favoritesQuery = useFavoriteIds()
-  const favorites = favoritesQuery.data ?? []
   const toggleFavoriteMutation = useToggleFavorite()
   const mode = useViewModeStore((state) => state.mode)
   const isMobile = useMediaQuery('(max-width: 639px)')
@@ -102,46 +81,10 @@ export default function HomePage() {
     return () => clearTimeout(timer)
   }, [query])
 
-  const maxPriceEffective = filters.includes('up-to-3000')
-    ? String(Math.min(Number(maxPrice) || CHEAP_LIMIT, CHEAP_LIMIT))
-    : maxPrice
-
+  const search = {...request, q:debouncedQuery.trim() || undefined}
   const list = useInfiniteQuery({
-    queryKey: [
-      'hookers',
-      {
-        q: debouncedQuery,
-        city,
-        district,
-        metro,
-        service,
-        minPrice,
-        maxPrice: maxPriceEffective,
-        sort,
-        filters,
-        ids: onlyFavorites ? favorites : [],
-      },
-    ],
-    queryFn: ({ pageParam, signal }) =>
-      fetchHookers(
-        {
-          q: debouncedQuery || undefined,
-          city: city || undefined,
-          metro: metro || undefined,
-          district: district || undefined,
-          service: service || undefined,
-          minPrice: Number(minPrice) || undefined,
-          maxPrice: Number(maxPriceEffective) || undefined,
-          sort,
-          page: pageParam,
-          limit: PAGE_SIZE,
-          ids: onlyFavorites ? favorites : undefined,
-          hasPhoto: filters.includes('with-photo') || undefined,
-          reviewed: filters.includes('reviewed') || undefined,
-          center: filters.includes('center') || undefined,
-        },
-        signal,
-      ),
+    queryKey:['hookers',search],
+    queryFn:({pageParam,signal})=>fetchHookers({...search, page:pageParam, limit:PAGE_SIZE},signal),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
     // Старые данные держим на экране, пока грузится новая выборка.
@@ -167,12 +110,14 @@ export default function HomePage() {
     observer.observe(marker)
     return () => observer.disconnect()
   }, [list, list.hasNextPage, list.isFetchingNextPage, list.fetchNextPage, pages.length])
-  const favoritesReady = !onlyFavorites || favoritesQuery.isSuccess
+  const favoritesReady = !onlyFavorites || !token || favoritesQuery.isSuccess
   // Пустое избранное: запрос не нужен, а старые данные мешать не должны.
   const favoritesEmpty =
-    onlyFavorites && favoritesQuery.isSuccess && favorites.length === 0
+    onlyFavorites && (!token || favoritesQuery.isSuccess) && favorites.length === 0
   const items = favoritesEmpty ? [] : pages.flatMap((page) => page.items)
   const total = favoritesEmpty ? 0 : (pages[0]?.total ?? 0)
+  useCatalogPosition(list.isSuccess || favoritesEmpty)
+  const mappedTotal = favoritesEmpty ? 0 : pages[0]?.mappedTotal
   const showEmpty =
     items.length === 0 && favoritesReady && (list.isSuccess || favoritesEmpty)
   // Совсем пустая база: подсказки про фильтры бесполезны, нужен призыв создать анкету.
@@ -207,8 +152,8 @@ export default function HomePage() {
           <MapPin size={15} aria-hidden="true" /> Москва и область
         </div>
         <h1>Каталог анкет</h1>
-        <Link to="/map" className="map-link">
-          Смотреть на карте
+        <Link {...mapLinkProps(location)} className="map-link">
+          На карте{mappedTotal != null && !list.isPlaceholderData ? ' · '+mappedTotal : ''}
         </Link>
       </section>
 
@@ -411,7 +356,8 @@ export default function HomePage() {
                       name={item.name}
                       age={item.age}
                       city={item.city}
-                      district={[item.district, item.address?.metroIds.length ? 'м. ' + metroLabel(item.address.metroIds.slice(0,1)) : ''].filter(Boolean).join(' · ')}
+                      district={cardLocation(item.district,item.address,metro)}
+                      stationDistance={stationDistance(item.address,metro)}
                       catalogUrl={location.pathname + location.search}
                       pricePerHour={item.pricePerHour}
                       height={item.height}

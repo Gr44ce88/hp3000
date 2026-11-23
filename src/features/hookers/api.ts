@@ -1,7 +1,7 @@
 import { apiClient } from '@/lib/api/client'
 import type { Hooker, HookerListParams, HookerListResponse, Review } from './types'
 
-function toQuery(params: HookerListParams): string {
+export function toQuery(params: HookerListParams): string {
   const search = new URLSearchParams()
   if (params.metro) search.set('metro', params.metro)
   if (params.q) search.set('q', params.q)

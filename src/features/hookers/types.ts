@@ -55,6 +55,7 @@ export type HookerListParams = {
 
 export type HookerListResponse = {
   items: Hooker[]
+  mappedTotal?: number
   total: number
   page: number
   limit: number

@@ -6,6 +6,7 @@ export type HookerCardProps = {
   name: string
   age: number
   district?: string
+  stationDistance?: string
   catalogUrl?: string
   city: string
   pricePerHour: number
@@ -34,6 +35,7 @@ export function HookerCard({
   age,
   city,
   district,
+  stationDistance,
   catalogUrl,
   pricePerHour,
   height,
@@ -124,6 +126,7 @@ export function HookerCard({
         <span className="truncate">{district || city}</span>
       </p>
 
+      {stationDistance && <p className="mt-1 text-xs text-content">{stationDistance}</p>}
       {height !== undefined && !portrait && <p className="text-xs text-content-muted">{height} см · {city}</p>}
       {about && (
         <p
@@ -165,7 +168,7 @@ export function HookerCard({
       {body}
 
       {href && (
-        <Link to={href} state={catalogUrl ? { catalogUrl } : undefined} className="absolute inset-0" aria-label={`Анкета: ${name}, ${age}, ${city}${district ? `, ${district}` : ''}, ${money.format(pricePerHour)} ₽/час`}>
+        <Link to={href} state={catalogUrl ? { catalogUrl } : undefined} className="absolute inset-0" aria-label={`Анкета: ${name}, ${age}, ${city}${district ? `, ${district}` : ''}${stationDistance ? ', ' + stationDistance : ''}, ${money.format(pricePerHour)} ₽/час`}>
           <span className="sr-only">Открыть анкету</span>
         </Link>
       )}

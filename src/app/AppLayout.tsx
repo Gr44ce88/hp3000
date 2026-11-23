@@ -11,6 +11,8 @@ import {
   Sun,
   UserRound,
 } from 'lucide-react'
+import { mapLinkProps } from '@/features/hookers/catalogNavigation'
+import { CatalogReturn } from '@/features/hookers/CatalogReturn'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/hooks/useTheme'
@@ -29,7 +31,10 @@ const navItems = [
 
 export function AppLayout() {
   const { isDark, toggle } = useTheme()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
+  const mapLink = pathname==='/' || pathname==='/hookers' ? mapLinkProps(location) : {to:'/map'}
+  const navClass = 'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content'
   const navigationType = useNavigationType()
   const lastPath = useRef<string | null>(null)
   const user = useSessionStore((state) => state.user)
@@ -65,16 +70,20 @@ export function AppLayout() {
           </NavLink>
 
           <nav aria-label="Основная навигация" className="main-nav">
-            {navItems.map((item) => (
+            {navItems.map((item) => item.to==='/' && pathname==='/map' ? (
+              <CatalogReturn key={item.to} aria-label={item.label} className={navClass}>
+                <item.icon className="size-3.5" aria-hidden="true"/><span>{item.label}</span>
+              </CatalogReturn>
+            ) : (
               <NavLink
                 key={item.to}
-                to={item.to}
+                {...(item.to==='/map' ? mapLink : {to:item.to})}
                 end={'end' in item ? item.end : undefined}
                 aria-label={item.label}
                 title={item.label}
                 className={({ isActive }) =>
                   cn(
-                    'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-content-muted transition-colors hover:text-content',
+                    navClass,
                     isActive && 'bg-chip font-medium text-content hover:text-content',
                   )
                 }
@@ -140,11 +149,12 @@ export function AppLayout() {
           aria-label="Нижняя навигация"
           className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-content-muted"
         >
+          {pathname==='/map' ? <CatalogReturn className="inline-flex items-center gap-1 hover:text-content"><LayoutGrid className="size-3" aria-hidden="true"/>Анкеты</CatalogReturn> :
           <Link to="/" className="inline-flex items-center gap-1 hover:text-content">
             <LayoutGrid className="size-3" aria-hidden="true" />
             Анкеты
-          </Link>
-          <Link to="/map" className="inline-flex items-center gap-1 hover:text-content">
+          </Link>}
+          <Link {...mapLink} className="inline-flex items-center gap-1 hover:text-content">
             <Flame className="size-3" aria-hidden="true" />
             Карта
           </Link>
