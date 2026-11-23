@@ -1,3 +1,5 @@
+import {Freshness} from '@/features/hookers/Freshness'
+import {Contact} from '@/features/hookers/Contact'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
@@ -5,12 +7,10 @@ import {
   ArrowLeft,
   Check,
   Coins,
-  Copy,
   CreditCard,
   Heart,
   MapPin,
   Pencil,
-  Phone,
   Send,
   Star,
 } from 'lucide-react'
@@ -28,7 +28,6 @@ import { useFavoriteIds, useToggleFavorite } from '@/features/favorites/api'
 import { createPayment, fetchPayment, mockPay, type PaymentMethod } from '@/features/payments/api'
 import { COMMISSION_CURRENCY, PUBLICATION_COMMISSION } from '@/features/hookers/schema'
 import { useHistoryStore } from '@/stores/history'
-import { copyText } from '@/lib/clipboard'
 import { cn } from '@/lib/cn'
 
 const money = new Intl.NumberFormat('ru-RU')
@@ -48,7 +47,6 @@ export default function HookerDetailPage() {
   const [sort, setSort] = useState<ReviewSort>('new')
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState<'ok' | 'fail' | false>(false)
   const queryClient = useQueryClient()
   const [publishError, setPublishError] = useState<string | null>(null)
 
@@ -76,7 +74,7 @@ export default function HookerDetailPage() {
   })
 
   const hooker = useQuery({
-    queryKey: ['hooker', id],
+    queryKey: ['hooker', id, user?.id ?? 'guest'],
     queryFn: ({ signal }) => fetchHooker(id, signal),
     enabled: Boolean(id),
   })
@@ -105,9 +103,6 @@ export default function HookerDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewedId])
 
-  useEffect(() => {
-    setCopied(false)
-  }, [viewedId])
 
   if (hooker.isPending) {
     return (
@@ -235,6 +230,8 @@ export default function HookerDetailPage() {
             <span className="text-xs font-normal text-content-muted">/час</span>
           </p>
 
+          <Freshness at={item.confirmedAt}/>
+          {item.paused ? <p>Анкета на паузе</p> : <Contact key={item.id} phone={item.phone} telegram={item.telegram}/>}
           {item.services.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5">
               {item.services.map((service) => (
@@ -246,41 +243,6 @@ export default function HookerDetailPage() {
           )}
 
           {item.about && <p className="mt-4 text-[13px] whitespace-pre-line text-content">{item.about}</p>}
-
-          {/* Контакт — главное действие страницы, поэтому крупно и отдельно от вторичного. */}
-          <div className="mt-4 rounded-lg bg-mat p-3 ring-1 ring-hairline">
-            <p className="text-[11px] tracking-wide text-content-muted uppercase">Связаться</p>
-            <div className="mt-2 flex items-center gap-2">
-              <a
-                href={`tel:${item.phone.replace(/[^+\d]/g, '')}`}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-white tabular-nums hover:opacity-90"
-              >
-                <Phone className="size-4" aria-hidden="true" />
-                {item.phone}
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  void copyText(item.phone).then((ok) => {
-                    setCopied(ok ? 'ok' : 'fail')
-                    if (ok) setTimeout(() => setCopied(false), 2000)
-                  })
-                }}
-                className="grid size-10 shrink-0 place-items-center rounded-full bg-chip text-content hover:bg-content/10"
-                aria-label={copied === 'ok' ? 'Телефон скопирован' : 'Скопировать телефон'}
-                title="Скопировать телефон"
-              >
-                {copied === 'ok' ? (
-                  <Check className="size-4" aria-hidden="true" />
-                ) : (
-                  <Copy className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            </div>
-            <p className="mt-1.5 h-4 text-[11px] text-content-muted" aria-live="polite">
-              {copied === 'ok' ? 'Скопировано в буфер' : copied === 'fail' ? 'Не удалось — выделите номер вручную' : ''}
-            </p>
-          </div>
 
           {isOwner && (
             <Link
@@ -301,7 +263,7 @@ export default function HookerDetailPage() {
           {item.address.metroIds.length > 0 && <p className="text-sm text-content-muted">Метро рядом · {metroLabel(item.address.metroIds)}</p>}
           <HouseMap items={[{id:item.id,name:item.name,address:item.address}]}/>
           <a className="underline" target="_blank" rel="noreferrer" href={`https://yandex.ru/maps/?pt=${item.address.lon},${item.address.lat}&z=17`}>Открыть дом в Яндекс Картах</a>
-        </> : <p className="text-content-muted">{item.district && item.district+' · '}Автор пока не указал дом.</p>}
+        </> : item.showHouse===false ? <p>Только метро · {metroLabel(item.metroIds ?? []) || 'рядом нет станций'}</p> : <p className="text-content-muted">{item.district && item.district+' · '}Автор пока не указал дом.</p>}
       </section>
 
       <section className="mt-8">

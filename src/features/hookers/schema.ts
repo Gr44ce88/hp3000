@@ -34,6 +34,8 @@ export const PHOTOS_MAX = 6
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]['value']
 
 export const listingSchema = z.object({
+  showHouse:z.boolean().default(false),
+  telegram:z.string().trim().regex(/^(?:@?[A-Za-z][A-Za-z0-9_]{4,31})?$/,'Введите имя Telegram, например anna_city').transform(value=>value.replace(/^@/,'')).default(''),
   name: z
     .string()
     .trim()

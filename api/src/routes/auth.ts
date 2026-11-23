@@ -161,7 +161,7 @@ authRouter.get(
        from history v
        join hookers h on h.id = v.hooker_id
        ${HOOKER_JOIN}
-       where v.user_id = $1
+       where v.user_id = $1 and h.is_published and not h.paused
        order by v.viewed_at desc
        limit 20`,
       [currentUser(req).id],

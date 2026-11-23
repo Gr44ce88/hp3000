@@ -11,7 +11,7 @@ statsRouter.get(
     const rows = await query<{ district: string; city: string; count: string }>(
       `select district, city, count(*) as count
        from hookers
-       where district <> '' and is_published
+       where district <> '' and is_published and not paused
        group by district, city
        order by count(*) desc, district asc`,
     )

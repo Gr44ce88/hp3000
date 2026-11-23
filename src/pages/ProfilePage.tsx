@@ -1,3 +1,4 @@
+import {ListingActions} from '@/features/hookers/ListingActions'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -29,7 +30,7 @@ export default function ProfilePage() {
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
 
-  const mine = useQuery({ queryKey: ['my-hookers'], queryFn: ({ signal }) => fetchMyHookers(signal) })
+  const mine = useQuery({ queryKey: ['my-hookers',user?.id], queryFn: ({ signal }) => fetchMyHookers(signal) })
   const historyIds = useHistoryStore((state) => state.entries).map((entry) => entry.id)
   const history = useQuery({
     queryKey: ['history-local', historyIds],
@@ -171,6 +172,7 @@ export default function ProfilePage() {
                   </>
                 )}
               </div>
+              <ListingActions item={item}/>
             </li>
           ))}
         </ul>

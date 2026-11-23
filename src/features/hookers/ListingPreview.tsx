@@ -41,7 +41,7 @@ export function ListingPreview({
         Предпросмотр анкеты
       </h2>
       <p className="text-content-muted text-sm">
-        Проверьте карточку и дом, который увидят посетители после публикации.
+        Проверьте карточку и публичные данные перед оплатой.
       </p>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,14rem)_1fr]">
         <div className="max-w-56">
@@ -56,16 +56,16 @@ export function ListingPreview({
         <div className="space-y-2">
           <h3 className="font-medium">Публичные данные</h3>
           <p>
-            {values.phone} · {values.height} см
+            {values.phone}{values.telegram && ' · @'+values.telegram} · {values.height} см
           </p>
           {values.about && <p>{values.about}</p>}
           {values.services.length > 0 && <p>{values.services.join(' · ')}</p>}
           <h3 className="pt-2 font-medium">Адрес встречи</h3>
-          <p>{addressLabel(address)}</p>
+          <p>{values.showHouse ? `После публикации всем будет виден дом по адресу ${addressLabel(address)}.` : 'Только метро. Точный адрес и точка дома скрыты.'}</p>
           {metro && <p className="text-content-muted text-sm">Метро рядом · {metro}</p>}
         </div>
       </div>
-      <HouseMap items={[{ id: 'preview', name: values.name, address }]} />
+      {values.showHouse && <HouseMap items={[{ id: 'preview', name: values.name, address }]} />}
       {error && (
         <p role="alert" className="text-danger text-sm">
           {error}

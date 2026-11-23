@@ -20,7 +20,7 @@ export const metroLabel = (ids: string[]) =>
 
 export function cardLocation(
   district: string | undefined,
-  address: HouseAddress | null | undefined,
+  address: Pick<HouseAddress,'metroIds'> | null | undefined,
   selectedMetro = '',
 ) {
   const nearest = address?.metroIds[0]

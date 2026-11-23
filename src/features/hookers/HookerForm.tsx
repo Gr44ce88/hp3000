@@ -63,6 +63,7 @@ export function HookerForm({
   })
 
   const city = useWatch({control,name:'city'}) ?? CITIES[0]
+  const showHouse = useWatch({control,name:'showHouse'})
   const paymentMethod = useWatch({ control, name: 'paymentMethod' })
   const about = useWatch({ control, name: 'about' }) ?? ''
   const photos = useWatch({ control, name: 'photos' }) ?? []
@@ -173,8 +174,16 @@ export function HookerForm({
         />
       </Field>
 
+      <Field label="Telegram (по желанию)" htmlFor="telegram" error={errors.telegram?.message}>
+        <Input id="telegram" placeholder="@username" {...register('telegram')}/>
+      </Field>
       <div id="meeting-address"><AddressField key={city} city={city} initial={address} selected={address}
         onChange={item=>{setAddress(item);setAddressTouched(true);setAddressError('')}}/>
+        <fieldset className="mt-3 space-y-2">
+          <legend className="font-medium">Что увидят посетители</legend>
+          <label className="block"><input type="checkbox" {...register('showHouse')}/> Показывать точный адрес и дом на карте</label>
+          <p className="text-sm text-content-muted">{showHouse ? 'Посетители увидят улицу, номер дома и точку на карте.' : 'Только метро. Дом используется для поиска ближайших станций.'}</p>
+        </fieldset>
         {addressError && <p role="alert" className="text-sm text-danger">{addressError}</p>}
       </div>
       <Field label="Район" htmlFor="district" error={errors.district?.message}>

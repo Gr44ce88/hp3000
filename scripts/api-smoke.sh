@@ -120,7 +120,7 @@ expect 404 "$(call GET "/hookers/$ID")" 'удалённая анкета не н
 expect 404 "$(call GET /%D0%BC%D1%83%D1%81%D0%BE%D1%80)" 'неизвестная ручка'
 
 # ——— оплата публикации (FreeKassa, тестовые ключи из .env) ———
-expect 201 "$(call POST /hookers '{"addressId":"'"$ADDRESS"'","name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'
+expect 201 "$(call POST /hookers '{"addressId":"'"$ADDRESS"'","showHouse":true,"name":"Платная","age":30,"city":"Москва","region":"Москва и область","phone":"+7 999 000-00-09","height":165,"pricePerHour":2000}' "$TOKEN")" 'анкета на оплату'
 PAID_ID="$(json .id)"
 expect 200 "$(call GET "/hookers/$PAID_ID" '' "$TOKEN")" 'своя неоплаченная видна'
 FEE="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$TMP/body','utf8')).pricePerHour)")"
@@ -161,6 +161,28 @@ expect 0 "$(json .items.length)" 'дорогая анкета скрыта и н
 expect 200 "$(call GET "/map/listings?metro=$METRO&maxPrice=2000&ids=$PAID_ID")" 'та же выборка на карте'
 expect "$LAT,$LON" "$(node -e "const a=JSON.parse(require('fs').readFileSync(process.argv[1])).items.find(i=>i.id===process.argv[2])?.address;console.log([a?.lat,a?.lon].join(','))" "$TMP/body" "$PAID_ID")" 'координаты карты совпадают с домом'
 expect 200 "$(call POST '/payments/freekassa/notify' "{\"MERCHANT_ID\":\"12345\",\"AMOUNT\":\"$AMOUNT\",\"MERCHANT_ORDER_ID\":\"$ORDER_ID\",\"SIGN\":\"$GOOD_SIGN\"}")" 'повторное оповещение'
+expect 200 "$(call POST "/hookers/$PAID_ID/status" '{"action":"confirm","pricePerHour":2000,"phone":"+7 999 000-00-09","telegram":""}' "$TOKEN")" 'подтверждение автором'
+expect true "$(json '.confirmedAt != null')" 'дата явного подтверждения'
+expect 200 "$(call PATCH "/hookers/$PAID_ID" '{"showHouse":false,"telegram":"demo_author"}' "$TOKEN")" 'только метро и второй способ связи'
+expect null "$(json .confirmedAt)" 'изменение контакта сбрасывает подтверждение'
+expect 200 "$(call GET "/hookers/$PAID_ID")" 'публичная карточка только с метро'
+expect null "$(json .address)" 'дом скрыт в карточке'
+expect "$METRO" "$(json '.metroIds[0]')" 'метро доступно посетителю'
+expect 200 "$(call GET "/me/listings/$PAID_ID" '' "$TOKEN")" 'приватное редактирование'
+expect "$ADDRESS" "$(json .address.id)" 'автор может исправить дом'
+expect 200 "$(call GET "/hookers?metro=$METRO&ids=$PAID_ID")" 'скрытый дом находится по станции'
+expect null "$(json '.items[0].address')" 'в каталоге нет координат'
+expect 0 "$(json .mappedTotal)" 'счётчик публичных домов'
+expect 200 "$(call GET "/map/listings?ids=$PAID_ID")" 'публичная карта'
+expect 0 "$(json .items.length)" 'скрытого дома на карте нет'
+expect 200 "$(call GET "/catalog/alternatives?metro=$METRO&maxPrice=1999&ids=$PAID_ID")" 'бюджетная альтернатива'
+expect 2000 "$(json .minimum)" 'минимум из актуальной выдачи'
+expect 200 "$(call POST "/hookers/$PAID_ID/status" '{"action":"pause"}' "$TOKEN")" 'пауза автора'
+expect 404 "$(call GET "/hookers/$PAID_ID")" 'публичная ссылка на паузе'
+expect 200 "$(call GET "/hookers?ids=$PAID_ID")" 'каталог на паузе'
+expect 0 "$(json .total)" 'пауза скрывает анкету'
+expect 200 "$(call POST "/hookers/$PAID_ID/status" '{"action":"resume"}' "$TOKEN")" 'возврат без повторной оплаты'
+expect 200 "$(call GET "/hookers/$PAID_ID")" 'ссылка восстановлена'
 expect 204 "$(call DELETE "/hookers/$PAID_ID" '' "$TOKEN")" 'уборка платной анкеты'
 
 expect 204 "$(call POST /auth/logout '' "$TOKEN")" 'выход смоук-аккаунта'

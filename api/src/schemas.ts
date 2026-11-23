@@ -31,6 +31,8 @@ export const meSchema = z.object({
 })
 
 export const listingSchema = z.object({
+  showHouse: z.boolean().default(false),
+  telegram: z.string().trim().regex(/^(?:[A-Za-z][A-Za-z0-9_]{4,31})?$/, 'Введите имя Telegram без @').default(''),
   addressId: z.uuid().optional(),
   name: z
     .string()

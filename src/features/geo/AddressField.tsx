@@ -53,7 +53,7 @@ export function AddressField({
     <fieldset className="bg-mat space-y-3 rounded-lg p-4">
       <legend className="px-1 font-medium">Адрес встречи</legend>
       <p className="text-content-muted text-sm">
-        Укажите улицу и дом. После публикации адрес будет виден на карте.
+        Укажите улицу и дом. Найдите и подтвердите дом для расчёта ближайших станций.
       </p>
       <div className="grid grid-cols-[2fr_1fr] gap-2">
         <label>

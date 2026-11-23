@@ -1,3 +1,4 @@
+import {Freshness} from '@/features/hookers/Freshness'
 import { Link } from 'react-router-dom'
 import { Heart, MapPin, Star } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -6,6 +7,7 @@ export type HookerCardProps = {
   name: string
   age: number
   district?: string
+  confirmedAt?:string|null
   stationDistance?: string
   catalogUrl?: string
   city: string
@@ -35,6 +37,7 @@ export function HookerCard({
   age,
   city,
   district,
+  confirmedAt,
   stationDistance,
   catalogUrl,
   pricePerHour,
@@ -127,6 +130,7 @@ export function HookerCard({
       </p>
 
       {stationDistance && <p className="mt-1 text-xs text-content">{stationDistance}</p>}
+      <Freshness at={confirmedAt}/>
       {height !== undefined && !portrait && <p className="text-xs text-content-muted">{height} см · {city}</p>}
       {about && (
         <p

@@ -40,6 +40,8 @@ export async function fetchMyHookers(signal?: AbortSignal): Promise<Hooker[]> {
 }
 
 export type ListingPayload = {
+  showHouse?: boolean
+  telegram?: string
   addressId?: string
   name: string
   age: number
@@ -60,6 +62,8 @@ export type ListingPayload = {
 export function toListingBody(input: ListingPayload) {
   return {
     addressId: input.addressId,
+    showHouse: input.showHouse,
+    telegram: input.telegram,
     name: input.name,
     age: Number(input.age),
     city: input.city,

@@ -14,7 +14,10 @@ import {
   SearchX,
 } from 'lucide-react'
 import { copyText } from '@/lib/clipboard'
-import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api/client'
+import type {Alternatives} from '@/features/geo/alternatives'
+import {stationById} from '@/features/geo/metro'
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { HookerCard } from '@/components/widgets/HookerCard'
 import { MobileFilterPanel } from '@/components/widgets/MobileFilterPanel'
 import { CardSkeleton } from '@/components/widgets/CardSkeleton'
@@ -22,7 +25,7 @@ import { ScrollTopButton } from '@/components/widgets/ScrollTopButton'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
-import { fetchHookers } from '@/features/hookers/api'
+import { fetchHookers, toQuery } from '@/features/hookers/api'
 import { MetroPicker } from '@/features/geo/MetroPicker'
 import { cardLocation, stationDistance } from '@/features/geo/metro'
 import { catalogFilters } from '@/features/hookers/catalogFilters'
@@ -120,6 +123,13 @@ export default function HomePage() {
   const mappedTotal = favoritesEmpty ? 0 : pages[0]?.mappedTotal
   const showEmpty =
     items.length === 0 && favoritesReady && (list.isSuccess || favoritesEmpty)
+  const alternatives = useQuery({
+    queryKey:['hookers','alternatives',search],
+    queryFn:async({signal})=>(await apiClient.get<Alternatives>('/catalog/alternatives'+toQuery(search),{signal})).data,
+    enabled:showEmpty && !favoritesEmpty && Boolean(metro) && !list.isPlaceholderData && query.trim()===debouncedQuery.trim(),
+  })
+  const nearby=alternatives.data?.nearby
+  const minimum=alternatives.data?.minimum
   // Совсем пустая база: подсказки про фильтры бесполезны, нужен призыв создать анкету.
   const catalogEmpty =
     showEmpty &&
@@ -301,9 +311,9 @@ export default function HomePage() {
           {showEmpty && (
             <div className="bg-mat ring-dashed ring-hairline rounded-lg p-8 text-center ring-1">
               <span className="bg-chip text-content-muted mx-auto mb-3 grid size-10 place-items-center rounded-full">
-                {catalogEmpty ? (
+              {catalogEmpty ? (
                   <FilePlus2 className="size-5" aria-hidden="true" />
-                ) : onlyFavorites ? (
+                ) : favoritesEmpty ? (
                   <Heart className="size-5" aria-hidden="true" />
                 ) : (
                   <SearchX className="size-5" aria-hidden="true" />
@@ -312,17 +322,19 @@ export default function HomePage() {
               <p className="text-content text-sm font-medium">
                 {catalogEmpty
                   ? 'Анкет пока нет'
-                  : onlyFavorites
+                  : favoritesEmpty
                     ? 'В избранном пусто'
                     : 'Под условия ничего не подошло'}
               </p>
               <p className="text-content-muted mx-auto mt-1 max-w-sm text-xs">
                 {catalogEmpty
                   ? 'База пустая — как после деплоя. Первую анкету добавляет любой авторизованный.'
-                  : onlyFavorites
+                  : favoritesEmpty
                     ? 'Жмите на сердечко на карточке, чтобы сохранить анкету.'
                     : 'Ослабьте фильтры или измените поиск.'}
               </p>
+                {nearby && <button className="block mx-auto my-2 min-h-11 underline" onClick={()=>update({metro:nearby.id})}>{stationById.get(nearby.id)?.name} · найдено {nearby.count} с теми же фильтрами</button>}
+              {minimum && <button className="block mx-auto my-2 min-h-11 underline" onClick={()=>update({max:String(minimum),f:filters.filter(f=>f!=='up-to-3000').join(',')})}>У этой станции от {minimum.toLocaleString('ru-RU')} ₽/час</button>}
               {catalogEmpty ? (
                 <Link
                   to="/hookers/new"
@@ -353,11 +365,11 @@ export default function HomePage() {
                   <li key={item.id} className="min-w-0">
                     <HookerCard
                       id={item.id}
-                      name={item.name}
+                      confirmedAt={item.confirmedAt} name={item.name}
                       age={item.age}
                       city={item.city}
-                      district={cardLocation(item.district,item.address,metro)}
-                      stationDistance={stationDistance(item.address,metro)}
+                      district={cardLocation(item.district,item.address ?? {metroIds:item.metroIds ?? []},metro)}
+                      stationDistance={stationDistance(item.address,metro) ?? (metro && item.metroIds?.includes(metro) ? 'м. '+stationById.get(metro)?.name+' · '+(item.distanceBand || 'рядом') : undefined)}
                       catalogUrl={location.pathname + location.search}
                       pricePerHour={item.pricePerHour}
                       height={item.height}
